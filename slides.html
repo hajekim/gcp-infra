@@ -1,0 +1,2549 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[발표 슬라이드] Google Compute Engine 아키텍처 심화 및 실전 구축·운영 가이드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-scale: 1;
+      --bg-app: #0f172a;
+      --bg-slide: #ffffff;
+      --bg-surface: #f8fafc;
+      --bg-surface-alt: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #1e293b;
+      --text-muted: #475569;
+      --border-subtle: #cbd5e1;
+      --border-strong: #94a3b8;
+      --accent-blue: #1a73e8;
+      --accent-blue-soft: #e8f0fe;
+      --accent-green: #137333;
+      --accent-green-soft: #e6f4ea;
+      --accent-amber: #b06000;
+      --accent-amber-soft: #fef7e0;
+      --accent-red: #c5221f;
+      --accent-red-soft: #fce8e6;
+      --accent-purple: #7627bb;
+      --accent-purple-soft: #f3e8fd;
+      --accent-teal: #007b83;
+      --accent-teal-soft: #e4f7fb;
+      --font-sans: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-sans);
+      background: var(--bg-app);
+      color: var(--text-primary);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Control Bar */
+    .deck-header {
+      height: 54px;
+      background: #0b1120;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: #f8fafc;
+      z-index: 100;
+      gap: 12px;
+    }
+
+    .deck-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #f8fafc;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4285f4;
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.25);
+    }
+
+    .session-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .session-tab {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      font-family: var(--font-sans);
+    }
+
+    .session-tab:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    .session-tab.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: #60a5fa;
+    }
+
+    .deck-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .ctrl-btn {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ctrl-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .ctrl-btn.primary {
+      background: #1a73e8;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #93c5fd;
+      padding: 0 8px;
+      min-width: 68px;
+      text-align: center;
+    }
+
+    /* Progress Bar */
+    .progress-track {
+      height: 4px;
+      background: #1e293b;
+      width: 100%;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4285f4, #34a853);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    /* Stage & Slide Viewport */
+    .deck-stage {
+      height: calc(100vh - 58px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 28px;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1560px;
+      height: 100%;
+      max-height: 880px;
+      background: var(--bg-slide);
+      border-radius: 16px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+      padding: 34px 46px 26px;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    /* Slide Header & Narrative Context */
+    .slide-top {
+      margin-bottom: 14px;
+    }
+
+    .slide-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 12px;
+    }
+
+    .slide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: calc(13.5px * var(--font-scale));
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--accent-blue-soft);
+      color: var(--accent-blue);
+    }
+
+    .slide-badge.s2 { background: var(--accent-teal-soft); color: var(--accent-teal); }
+    .slide-badge.s3 { background: var(--accent-purple-soft); color: var(--accent-purple); }
+    .slide-badge.s4 { background: var(--accent-amber-soft); color: var(--accent-amber); }
+
+    .slide-time {
+      font-size: calc(13.5px * var(--font-scale));
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .slide-title {
+      font-size: calc(29px * var(--font-scale));
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.28;
+      margin-bottom: 10px;
+    }
+
+    /* Storyline Context Banner */
+    .storyline-banner {
+      background: #f8fafc;
+      border-left: 4px solid var(--accent-blue);
+      padding: 10px 16px;
+      border-radius: 0 8px 8px 0;
+      font-size: calc(16.5px * var(--font-scale));
+      color: var(--text-secondary);
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .storyline-banner strong {
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    /* Slide Body */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+      margin: 12px 0;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-highlight {
+      background: #f8fbff;
+      border: 2px solid var(--accent-blue);
+    }
+
+    .card-warn {
+      background: #fffdf9;
+      border: 2px solid #f59e0b;
+    }
+
+    .card-title {
+      font-size: calc(19px * var(--font-scale));
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 8px;
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 18px;
+      font-size: calc(16.5px * var(--font-scale));
+      color: var(--text-secondary);
+      line-height: 1.52;
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--accent-blue);
+      font-weight: 800;
+      font-size: calc(18px * var(--font-scale));
+    }
+
+    .bullet-list li strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    /* Tables in Slides */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: calc(15.5px * var(--font-scale));
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    th, td {
+      padding: 11px 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: top;
+      line-height: 1.48;
+    }
+
+    th {
+      background: var(--bg-surface-alt);
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: calc(15px * var(--font-scale));
+    }
+
+    td {
+      color: var(--text-secondary);
+    }
+
+    /* Code & ASCII Diagram Box */
+    .code-box {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-family: var(--font-mono);
+      font-size: calc(14px * var(--font-scale));
+      line-height: 1.5;
+      overflow-x: auto;
+      border: 1px solid #1e293b;
+    }
+
+    .code-box .code-title {
+      display: block;
+      font-size: calc(12px * var(--font-scale));
+      font-weight: 700;
+      color: #93c5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .code-box pre {
+      margin: 0;
+      font-family: var(--font-mono);
+      white-space: pre;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .code-box code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    /* Slide Footer / Key Takeaway & Bridge */
+    .slide-footer {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 11px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      font-size: calc(15.5px * var(--font-scale));
+    }
+
+    .takeaway-text {
+      color: var(--text-primary);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .takeaway-label {
+      display: inline-block;
+      background: var(--accent-blue);
+      color: #fff;
+      font-size: calc(12.5px * var(--font-scale));
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    .next-bridge {
+      font-size: calc(14px * var(--font-scale));
+      font-weight: 700;
+      color: var(--accent-blue);
+      white-space: nowrap;
+    }
+
+    /* Speaker Notes Drawer */
+    .speaker-notes {
+      display: none;
+      margin-top: 10px;
+      background: #1e293b;
+      color: #f1f5f9;
+      border-left: 4px solid #38bdf8;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: calc(15px * var(--font-scale));
+      line-height: 1.55;
+    }
+
+    body.show-notes .speaker-notes {
+      display: block;
+    }
+
+    .speaker-notes-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    /* Overview Modal */
+    .overview-modal {
+      display: none;
+      position: fixed;
+      inset: 54px 0 0 0;
+      background: rgba(15, 23, 42, 0.96);
+      z-index: 200;
+      padding: 28px;
+      overflow-y: auto;
+    }
+
+    .overview-modal.open {
+      display: block;
+    }
+
+    .overview-grid {
+      max-width: 1480px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+    }
+
+    .overview-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      color: #f8fafc;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .overview-card:hover, .overview-card.current {
+      border-color: #60a5fa;
+      transform: translateY(-2px);
+      background: #26354d;
+    }
+
+    .overview-num {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #93c5fd;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .overview-title {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .overview-sub {
+      font-size: 12.5px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1100px) {
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+      .slide {
+        padding: 22px 24px;
+      }
+      .session-tabs {
+        display: none;
+      }
+    }
+
+    @media print {
+      html, body {
+        height: auto;
+        overflow: visible;
+        background: #fff;
+      }
+      .deck-header, .progress-track, .overview-modal {
+        display: none !important;
+      }
+      .deck-stage {
+        height: auto;
+        padding: 0;
+        display: block;
+      }
+      .slide {
+        display: flex !important;
+        max-height: none;
+        height: auto;
+        page-break-after: always;
+        box-shadow: none;
+        border: 1px solid #cbd5e1;
+        margin-bottom: 24px;
+      }
+      .speaker-notes {
+        display: block !important;
+        background: #f8fafc;
+        color: #0f172a;
+        border-color: #1a73e8;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation & Presentation Controls -->
+  <header class="deck-header">
+    <a href="index.html" class="deck-brand" title="기술 문서 포털로 돌아가기">
+      <span class="brand-dot"></span>
+      <span>GCE Architecture Deep Dive · 3-Hour Deck</span>
+    </a>
+
+    <div class="session-tabs">
+      <button class="session-tab active" onclick="goToSlide(0)">Intro (1~2)</button>
+      <button class="session-tab" onclick="goToSlide(2)">Session 1: GCE Core (3~9)</button>
+      <button class="session-tab" onclick="goToSlide(9)">Session 2: MIG &amp; Lifecycle (10~16)</button>
+      <button class="session-tab" onclick="goToSlide(16)">Session 3: Load Balancing (17~25)</button>
+      <button class="session-tab" onclick="goToSlide(25)">Session 4: Day-2 &amp; IaC (26~30)</button>
+    </div>
+
+    <div class="deck-controls">
+      <button class="ctrl-btn" onclick="adjustFont(-0.08)" title="폰트 크기 축소">A-</button>
+      <button class="ctrl-btn" onclick="adjustFont(0.08)" title="폰트 크기 확대">A+</button>
+      <button class="ctrl-btn" onclick="toggleNotes()" id="btnNotes" title="발표자 노트 토글 (단축키: S)">노트 (S)</button>
+      <button class="ctrl-btn" onclick="toggleOverview()" title="전체 슬라이드 목차 (단축키: O)">전체 목차 (O)</button>
+      <button class="ctrl-btn" onclick="toggleFullscreen()" title="전체화면 전환 (단축키: F)">전체화면 (F)</button>
+      <button class="ctrl-btn" onclick="prevSlide()" title="이전 슬라이드 (←)">◀</button>
+      <span class="slide-counter" id="slideCounter">1 / 30</span>
+      <button class="ctrl-btn primary" onclick="nextSlide()" title="다음 슬라이드 (→)">▶</button>
+      <a href="index.html" class="ctrl-btn" title="상세 기술 문서 보기">문서 뷰</a>
+      <a href="proposal.html" class="ctrl-btn" title="일정 옵션별 제안서 보기">제안서</a>
+    </div>
+  </header>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Overview Grid Modal -->
+  <div class="overview-modal" id="overviewModal">
+    <div class="overview-grid" id="overviewGrid"></div>
+  </div>
+
+  <main class="deck-stage" id="deckStage">
+
+    <!-- Slide 1: Cover -->
+    <section class="slide active" data-session="intro" data-title="과정 소개 및 학습 목표">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Google Cloud Technical Enablement · Level 300-400</span>
+          <span class="slide-time">총 3시간 (180분, 4개 핵심 세션)</span>
+        </div>
+        <h2 class="slide-title" style="font-size: calc(36px * var(--font-scale)); margin-top: 8px;">Google Compute Engine 아키텍처 심화 및 실전 구축·운영 가이드</h2>
+        <div class="storyline-banner">
+          <strong>핵심 주제:</strong> 온프레미스 물리 장비 및 타 클라우드(VPC 내 가상 장비 기반) 멘탈 모델에서 벗어나, Google의 <strong>Andromeda SDN, GFE, Maglev, 분산 Envoy 프록시 및 MIG 상태 머신</strong>의 동작 원리를 해부합니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="card card-highlight">
+            <div class="card-title">Session 1 (45분)</div>
+            <ul class="bullet-list">
+              <li><strong>GCE 코어 아키텍처 및 베이스라인</strong></li>
+              <li>C3/C4 &amp; Titanium IPU 오프로딩</li>
+              <li>gVNIC &amp; Tier 1 대역폭 공식</li>
+              <li>Hyperdisk 동적 성능 프로비저닝</li>
+              <li>Global/Shared VPC &amp; OS Login + IAP</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">Session 2 (50분)</div>
+            <ul class="bullet-list">
+              <li><strong>Instance Group 구조 및 라이프사이클</strong></li>
+              <li>UMIG vs Regional MIG 멀티존 분산</li>
+              <li>무중단 롤링 배포 &amp; Canary 전략</li>
+              <li>Liveness vs Readiness 헬스 체크 분리</li>
+              <li>Stateful MIG 보존 항목과 3대 제약</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">Session 3 (55분)</div>
+            <ul class="bullet-list">
+              <li><strong>Cloud Load Balancing 트래픽 제어</strong></li>
+              <li>GFE + Andromeda + Maglev + Envoy</li>
+              <li>Proxy LB vs Passthrough(DSR &amp; <code>proto 66</code>)</li>
+              <li>하이브리드 BGP &amp; Cloud NAT 포트 산정</li>
+              <li><strong>Keep-alive 502 에러(600s vs 620s) 해결</strong></li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">Session 4 (30분)</div>
+            <ul class="bullet-list">
+              <li><strong>Day-2 트러블슈팅 및 IaC 자동화</strong></li>
+              <li>Ops Agent 메모리·프로세스 관측</li>
+              <li>LB 지연 지표 비교를 통한 병목 구간 특정</li>
+              <li><code>statusDetails</code> 5xx 원인 판별 플레이북</li>
+              <li>Terraform <code>create_before_destroy</code> 패턴</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">안내</span>단축키: 좌우 방향키(<code>←</code>/<code>→</code>) 이동 · <code>A+</code>/<code>A-</code> 폰트 크기 조절 · <code>S</code> 발표자 노트 · <code>O</code> 전체 목차 · <code>F</code> 전체화면</div>
+        <div class="next-bridge">다음: 3시간 전체 스토리라인 및 아키텍처 흐름 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트 (스토리라인 가이드)</span>
+        이번 3시간 교육은 단순 콘솔 클릭 방법을 다루지 않습니다. 온프레미스 L4/L7 스위치와 타 클라우드(AWS EC2/ALB/TGW)에 익숙한 인프라·네트워크 엔지니어분들이 Google Cloud에서 아키텍처를 설계할 때 가장 많이 겪는 구조적 차이점과 프로덕션 장애 예방 공식을 4단계 스토리라인으로 풀어냅니다.
+      </div>
+    </section>
+
+    <!-- Slide 2: Storyline & 3-Hour Roadmap -->
+    <section class="slide" data-session="intro" data-title="3시간 아키텍처 빌드업 스토리라인">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Course Roadmap &amp; Storyline</span>
+          <span class="slide-time">00:00 ~ 03:00 (180분 본 과정 + 별도 실습 60분)</span>
+        </div>
+        <h2 class="slide-title">단일 VM에서 글로벌 트래픽 제어까지: 4단계 엔지니어링 스토리라인</h2>
+        <div class="storyline-banner">
+          <strong>왜 이 순서로 배우는가?</strong> 바닥의 <strong>단일 VM·디스크·VPC(Session 1)</strong>를 먼저 이해해야 그 위에서 돌아가는 <strong>무중단 클러스터(Session 2)</strong>를 설계할 수 있고, 클러스터의 생명주기를 알아야 <strong>로드 밸런서 연동과 502 에러 방지(Session 3)</strong> 및 <strong>Day-2 장애 추적(Session 4)</strong>이 완성됩니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">3시간(180분) 아키텍처 확장 흐름도</span>
+          <pre><code>[Session 1: 45분] 단일 VM &amp; VPC 베이스라인   ──▶  "물리 호스트의 I/O를 오프로딩(Titanium/gVNIC)하고 단일 서브넷으로 멀티존 VPC를 편다"
+        │
+        ▼
+[Session 2: 50분] MIG 무중단 클러스터링      ──▶  "단일 서브넷 위에서 3개 존에 VM을 자동 분산(Regional MIG)하고 무중단 롤링 배포/자가 치유한다"
+        │
+        ▼
+[Session 3: 55분] SDN 로드 밸런싱 &amp; 하이브리드 ──▶  "GFE/Maglev/Envoy로 예열 없이 트래픽을 분산하고, 온프레미스 BGP 연동 및 Keep-alive 502를 제거한다"
+        │
+        ▼
+[Session 4: 30분] Day-2 관측성 &amp; Terraform   ──▶  "LB 로그로 1분 안에 네트워크 vs 백엔드 병목을 가려내고, 불변 인프라를 코드로 무중단 배포한다"</code></pre>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">세션 구분</th>
+              <th style="width: 13%;">배정 시간</th>
+              <th style="width: 36%;">기존 온프레미스 / 타 클라우드에서의 고민</th>
+              <th style="width: 36%;">이번 세션에서 해결하는 핵심 질문</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Session 1</strong></td>
+              <td>45분 (00:00~00:45)</td>
+              <td>가상화 오버헤드, 디스크 용량 강제 증설, AZ별 서브넷 파편화, Bastion 관리 부담</td>
+              <td>Titanium IPU와 Hyperdisk는 어떻게 성능을 격리하며, Bastion 없이 어떻게 접근을 통제하는가?</td>
+            </tr>
+            <tr>
+              <td><strong>Session 2</strong></td>
+              <td>50분 (00:45~01:35)</td>
+              <td>배포 시 트래픽 순단, DB 장애 시 헬스 체크 실패로 인한 전체 서버 동시 재시작, 고정 IP 요구</td>
+              <td>Regional MIG의 무중단 배포 공식은 무엇이며, Liveness와 Readiness를 왜 분리해야 하는가?</td>
+            </tr>
+            <tr>
+              <td><strong>Session 3</strong></td>
+              <td>55분 (01:35~02:30)</td>
+              <td>이벤트 전 LB 사전 예열(Pre-warming), DSR 구성 복잡성, 간헐적 502 에러, NAT 포트 고갈</td>
+              <td>Maglev/Envoy는 어떻게 패킷을 전달하며, 600초 vs 620초 규칙으로 어떻게 502를 0건으로 만드는가?</td>
+            </tr>
+            <tr>
+              <td><strong>Session 4</strong></td>
+              <td>30분 (02:30~03:00)</td>
+              <td>지연 발생 시 네트워크팀과 개발팀 간 원소유 공방, Terraform 템플릿 변경 시 삭제 충돌</td>
+              <td>LB 로그 필드 2개로 어떻게 병목 구간을 즉시 특정하며, Terraform 블루/그린 교체를 어떻게 구현하는가?</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">과정 구성</span>핸즈온 실습(+60분)은 3시간 이론/아키텍처 본 과정과 분리되어 있어, 일정에 따라 별도 추가하거나 사후 자율 실습으로 활용합니다.</div>
+        <div class="next-bridge">다음: Session 1.1 머신 시리즈와 Titanium 아키텍처 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        참석자들에게 오늘 3시간 동안 우리가 함께 지어 올릴 아키텍처의 전체 지도를 먼저 보여줍니다. "단일 서버 -> 클러스터 -> 글로벌/하이브리드 네트워크 -> Day-2 운영" 순서로 층위를 쌓아 올린다는 맥락을 전달하세요.
+      </div>
+    </section>
+
+    <!-- Slide 3: Session 1.1 Compute & Titanium -->
+    <section class="slide" data-session="s1" data-title="1.1 머신 패밀리 및 Titanium IPU 오프로딩">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (1/7)</span>
+          <span class="slide-time">00:00 ~ 00:15 (Compute &amp; Machine Family)</span>
+        </div>
+        <h2 class="slide-title">1.1 세대별 머신 시리즈(C3/C4, N2/N4, E2)와 Titanium 오프로딩</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 가상머신 도입 시 가장 먼저 우려하는 것은 "호스트 하이퍼바이저가 내 CPU를 뺏어 쓰며 발생하는 응답 지연 편차(Tail Latency Jitter)"입니다. 3/4세대 머신(C3, C4, N4)은 이를 어떻게 하드웨어 수준에서 제거했을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">기존 호스트 CPU 가상화 vs 3/4세대 Titanium IPU 하드웨어 오프로딩 비교</span>
+          <pre><code>[기존 세대 (N1/N2)]   게스트 VM vCPU  +  호스트 하이퍼바이저 에뮬레이션(네트워크/스토리지 I/O) ──▶ 동일 물리 CPU 공유 (I/O 집중 시 지터 발생)
+[3/4세대 (C3/C4/N4)] 게스트 VM vCPU (100% 고객 워크로드 전용)  │  별도 Titanium IPU 전용 칩 (Andromeda SDN + Hyperdisk NVMe + 암호화 전담)</code></pre>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 16%;">머신 시리즈</th>
+              <th style="width: 22%;">프로세서 및 아키텍처</th>
+              <th style="width: 30%;">핵심 동작 특성</th>
+              <th style="width: 32%;">권장 워크로드 및 선택 기준</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>C3 / C4 / C3D</strong><br>(Compute-Optimized)</td>
+              <td>Intel Sapphire/Emerald Rapids, Granite Rapids, AMD EPYC Genoa + <strong>Titanium IPU</strong></td>
+              <td>네트워크·스토리지 가상화를 Titanium 전용 칩으로 완전 분리. 일관된 고클럭과 가장 낮은 응답 시간 편차 보장</td>
+              <td>고성능 API 게이트웨이, 대규모 트랜잭션 WAS, 인메모리 캐시(Redis), 실시간 데이터 처리</td>
+            </tr>
+            <tr>
+              <td><strong>N2 / N2D / N4</strong><br>(General-Purpose)</td>
+              <td>Intel Cascade/Ice Lake, Emerald Rapids(N4), AMD Milan</td>
+              <td>균형 잡힌 vCPU 대 메모리 비율(1:4 기본, 최대 1:8 확장). <strong>N4는 Titanium 및 Hyperdisk 기본 탑재</strong></td>
+              <td>표준 엔터프라이즈 웹/애플리케이션 서버, 중규모 데이터베이스, 마이크로서비스 백엔드</td>
+            </tr>
+            <tr>
+              <td><strong>E2</strong><br>(Cost-Optimized)</td>
+              <td>호스트 가용 자원에 따른 동적 플랫폼 할당</td>
+              <td>N2 대비 약 31% 저렴한 비용. Sustained Use Discount 대신 처음부터 낮은 기본 단가 제공</td>
+              <td>개발/스테이징(Dev/QA) 환경, 백오피스, 트래픽 편차가 완만한 무상태 경량 서비스</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>지연 시간에 민감한 프로덕션 핵심 티어는 Titanium IPU가 I/O를 오프로딩하는 <code>C3/C4</code> 또는 <code>N4</code> 시리즈를 표준으로 채택합니다.</div>
+        <div class="next-bridge">다음: 1.2 gVNIC과 Tier 1 고대역폭 네트워킹 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        AWS의 Nitro 시스템과 비견되는 Google Cloud의 하드웨어/소프트웨어 통합 아키텍처가 바로 Titanium입니다. N2에서 C3/C4나 N4로 넘어갈 때 단순 CPU 세대만 바뀌는 것이 아니라 스토리지(Hyperdisk)와 네트워크(gVNIC 100~200Gbps) 처리가 전용 IPU로 넘어가므로 P99 레이턴시가 극적으로 안정화된다는 점을 강조하세요.
+      </div>
+    </section>
+
+    <!-- Slide 4: Session 1.2 gVNIC & Tier 1 -->
+    <section class="slide" data-session="s1" data-title="1.2 gVNIC 및 Tier 1 고대역폭 네트워킹">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (2/7)</span>
+          <span class="slide-time">00:00 ~ 00:15 (Compute &amp; Machine Family)</span>
+        </div>
+        <h2 class="slide-title">1.2 VirtIO의 한계를 넘는 gVNIC과 대역폭 산정 공식</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> Titanium IPU로 호스트의 네트워크 처리를 가속했더라도, 정작 게스트 OS 안의 가상 랜카드 드라이버가 구형 <code>VirtIO</code>라면 32~50Gbps 이상에서 CPU 인터럽트 병목이 발생합니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">왜 gVNIC이 엔터프라이즈 필수 표준인가?</div>
+            <ul class="bullet-list">
+              <li><strong>Andromeda SDN 직접 연동:</strong> 레거시 VirtIO 에뮬레이션 계층을 거치지 않고 호스트의 Andromeda 가상 스위치 및 Titanium IPU와 직접 메모리 버퍼(DMA)를 교환합니다.</li>
+              <li><strong>3세대 이상 머신 필수 요건:</strong> <code>C3</code>, <code>C4</code>, <code>N4</code>, <code>C3D</code> 등 최신 머신 시리즈는 커스텀 이미지 생성 시 반드시 <code>--guest-os-features=GVNIC</code> 태그가 포함되어야 부팅됩니다.</li>
+              <li><strong>멀티 큐(RSS) 스케일링:</strong> 패킷 인터럽트를 단일 코어에 몰아넣지 않고 전체 vCPU 코어로 고르게 분산하여 패킷 드롭(softirq 병목)을 방지합니다.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">VM 이그레스(Egress) 대역폭 산정 공식</div>
+            <ul class="bullet-list">
+              <li><strong>기본 대역폭 공식:</strong> <code>vCPU 1개당 2 Gbps</code>씩 선형 증가</li>
+              <li><strong>표준 상한선 (기본값):</strong> 머신 시리즈에 따라 <strong>최대 32 Gbps ~ 100 Gbps</strong>에서 캡(Cap) 적용</li>
+              <li><strong>Tier 1 고대역폭 활성화 시:</strong> 대형 C3/C4/C3D 인스턴스에서 <code>--network-performance-configs=total-egress-bandwidth-tier=TIER_1</code> 옵션을 켜면 <strong>최대 100 Gbps ~ 200 Gbps</strong>까지 대역폭 상한이 확장됩니다.</li>
+              <li><strong>인바운드(Ingress):</strong> GCP VPC 내부에서 VM으로 들어오는 인바운드 대역폭은 별도 과금이나 소프트웨어 스로틀링 없이 수신측 처리 한계까지 열려 있습니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <span class="code-title">게스트 OS 내부에서 gVNIC 드라이버 및 멀티 큐 작동 상태 확인</span>
+          <pre><code>$ ethtool -i ens4
+driver: gve          # Google Virtual Ethernet (gVNIC) 커널 드라이버 활성화 확인
+version: 1.0.0</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>사내 표준 Golden Image 파이프라인(Packer)에는 반드시 <code>GVNIC</code> 피처 플래그를 기본 내장해야 최신 머신 패밀리와 Tier 1 대역폭을 사용할 수 있습니다.</div>
+        <div class="next-bridge">다음: 1.3 호스트 유지보수와 Live Migration ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        온프레미스 이미지를 그대로 마이그레이션할 때 가장 흔히 겪는 실수가 구형 `virtio-net`만 넣고 C3/N4에 올리려다 생성이 거부되는 사례입니다. 최신 배포판(Ubuntu 20.04+, RHEL 8+, Rocky Linux 8+)은 `gve` 드라이버가 기본 포함되어 있으므로 이미지 등록 시 `--guest-os-features=GVNIC`만 명시하면 됩니다.
+      </div>
+    </section>
+
+    <!-- Slide 5: Session 1.3 Live Migration vs Terminate -->
+    <section class="slide" data-session="s1" data-title="1.3 호스트 유지보수 이벤트: Live Migration vs Terminate">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (3/7)</span>
+          <span class="slide-time">00:00 ~ 00:15 (Compute &amp; Machine Family)</span>
+        </div>
+        <h2 class="slide-title">1.3 하드웨어 점검 시 VM을 살리는 Live Migration 메커니즘</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 물리 서버의 펌웨어 패치나 하드웨어 결함 예고 시, 타 클라우드에서는 종종 인스턴스 재부팅 안내 메일을 받고 새벽 작업을 해야 합니다. GCE는 어떻게 재부팅과 IP 변경 없이 실행 중인 VM을 옆 물리 서버로 옮길까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">GCE 무중단 Live Migration 3단계 메모리 동기화 타임라인</span>
+          <pre><code>[1. Pre-Copy 단계] VM이 정상 서비스 중인 상태에서 백그라운드로 메모리 페이지들을 신규 물리 호스트로 사전 복사
+        │
+[2. Blackout 단계] 변경된 마지막 메모리 조각(Dirty Pages)과 CPU 레지스터 상태만 순간 전환 (수십~수백 ms 이내, TCP 세션 유지)
+        │
+[3. Post-Copy 완료] Andromeda SDN이 해당 VM의 가상 NIC 라우팅 포인터를 신규 물리 호스트로 즉시 갱신 (재부팅 없음, IP/MAC 그대로 유지)</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">Live Migration 지원 대상 (기본값)</div>
+            <ul class="bullet-list">
+              <li><strong>일반 범용·컴퓨팅·메모리 최적화 VM (C3, C4, N2, N4, E2, M3 등)</strong></li>
+              <li>유지보수 정책: <code>onHostMaintenance = MIGRATE</code>, <code>automaticRestart = TRUE</code></li>
+              <li>물리 호스트 장애 징후나 정기 하이퍼바이저 패치 시 <strong>운영자 개입이나 재부팅 없이</strong> 투명하게 다른 물리 서버로 이동합니다.</li>
+            </ul>
+          </div>
+          <div class="card card-warn">
+            <div class="card-title">Live Migration 불가 (Terminate 대상 워크로드)</div>
+            <ul class="bullet-list">
+              <li><strong>물리 하드웨어가 호스트에 직결된 경우:</strong> GPU 장착 VM(A2/A3/G2), 대용량 Local SSD 연결 VM 일부, 베어메탈(<code>-metal</code>), Confidential VM 일부</li>
+              <li>호스트 점검 시 VM이 중지(<code>TERMINATE</code>)된 후 타 호스트에서 재시작됩니다.</li>
+              <li><strong>필수 대응책:</strong> 메타데이터 서버(<code>instance/maintenance-event</code>)를 폴링하여 종료 60분 전 알림을 감지하고 Connection Draining을 선제 수행해야 합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>표준 WAS/API 서버는 Live Migration으로 무중단 보호되며, GPU·대용량 Local SSD 노드만 메타데이터 이벤트 감지 데몬을 붙여 우아한 퇴거를 구현합니다.</div>
+        <div class="next-bridge">다음: 1.4 Persistent Disk vs Hyperdisk 스토리지 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        인프라 운영팀이 GCE를 운영하면서 가장 만족해하는 기능 중 하나가 Live Migration입니다. 단, 모든 VM이 무조건 Live Migration되는 것은 아니며 물리 PCIe 장치(GPU 등)에 묶인 인스턴스는 Terminate 후 재시작된다는 명확한 경계를 짚어주어야 실무 신뢰도가 높아집니다.
+      </div>
+    </section>
+
+    <!-- Slide 6: Session 1.4 Persistent Disk vs Hyperdisk -->
+    <section class="slide" data-session="s1" data-title="1.4 블록 스토리지 아키텍처: Persistent Disk vs Hyperdisk">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (4/7)</span>
+          <span class="slide-time">00:15 ~ 00:30 (Storage &amp; Image Engineering)</span>
+        </div>
+        <h2 class="slide-title">1.4 네트워크 블록 스토리지의 진화: Persistent Disk vs Hyperdisk</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 기존 Persistent Disk(PD)에서는 높은 IOPS를 얻으려면 필요하지도 않은 수 테라바이트의 디스크 용량을 억지로 늘려야 했습니다. 차세대 <strong>Hyperdisk</strong>는 어떻게 용량과 성능을 완전히 분리했을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 18%;">비교 항목</th>
+              <th style="width: 26%;">Persistent Disk (<code>pd-balanced</code> / <code>pd-ssd</code>)</th>
+              <th style="width: 30%;">Hyperdisk (<code>hyperdisk-balanced</code> / <code>extreme</code>)</th>
+              <th style="width: 26%;">Local SSD (물리 NVMe 직결)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>용량과 성능의 관계</strong></td>
+              <td><strong>디스크 크기(GB)에 비례하여 결정</strong><br>(<code>pd-ssd</code>: GB당 30 IOPS / 0.48 MB/s)</td>
+              <td><strong>용량과 무관하게 IOPS 및 처리량 독립 설정</strong><br>(작은 100GB 디스크에도 수만 IOPS 할당 가능)</td>
+              <td>고정된 초고성능 물리 NVMe<br>(최대 수백만 IOPS, 서브 밀리초 지연)</td>
+            </tr>
+            <tr>
+              <td><strong>무중단 성능 변경</strong></td>
+              <td>성능을 높이려면 디스크 용량을 증설해야 함 (용량 축소 불가)</td>
+              <td><strong>VM 가동 중 IOPS와 Throughput 수치를 API/CLI로 실시간 상향·하향 조절 가능</strong></td>
+              <td>변경 불가 (인스턴스 생성 시 고정)</td>
+            </tr>
+            <tr>
+              <td><strong>데이터 영속성 및 복제</strong></td>
+              <td>분산 스토리지 계층에 자동 암호화 및 다중 복제 (Regional PD 선택 시 2개 존 동기 복제)</td>
+              <td>Titanium IPU 하드웨어 오프로딩 기반 분산 저장, Storage Pools를 통한 리소스 풀 통합 공유</td>
+              <td><strong>휘발성(Ephemeral)</strong> - 사용자가 VM을 Stop하거나 호스트 장애 시 데이터 유실</td>
+            </tr>
+            <tr>
+              <td><strong>권장 사용처</strong></td>
+              <td>일반 OS 부팅 디스크, 범용 레거시 VM 볼륨</td>
+              <td><strong>C3/C4/N4 기반 핵심 DB, 고성능 WAS, 피크 타임 동적 I/O 조정이 필요한 볼륨</strong></td>
+              <td>분산 캐시 스크래치 디스크, 빅데이터 셔플 공간 (영구 데이터 저장 금지)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-box">
+          <span class="code-title">gcloud CLI · VM 재부팅 없이 Hyperdisk의 IOPS와 처리량을 실시간 변경</span>
+          <pre><code># 대규모 이벤트 시작 전: 디스크 용량(200GB)은 그대로 두고 IOPS만 3,000 -> 25,000으로 즉시 상향
+gcloud compute disks update prod-db-data-disk   --zone=asia-northeast3-a   --provisioned-iops=25000   --provisioned-throughput=600</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>3/4세대 머신(C3/C4/N4)에서는 용량 과다 할당 없이 IOPS를 실시간 조절할 수 있는 <code>hyperdisk-balanced</code>를 기본 스토리지로 채택합니다.</div>
+        <div class="next-bridge">다음: 1.5 Golden Image 파이프라인 vs Startup Script ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        AWS의 gp2에서 gp3/io2로 넘어갈 때와 유사하게, GCP에서도 PD에서 Hyperdisk로의 전환이 핵심입니다. 특히 Hyperdisk Storage Pools를 사용하면 여러 VM이 미리 구매한 전체 용량/IOPS 풀을 씬 프로비저닝(Thin Provisioning)으로 공유할 수 있어 스토리지 TCO를 크게 아낄 수 있습니다.
+      </div>
+    </section>
+
+    <!-- Slide 7: Session 1.5 Golden Image vs Startup Script -->
+    <section class="slide" data-session="s1" data-title="1.5 프로비저닝 전략: Golden Image vs Startup Script">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (5/7)</span>
+          <span class="slide-time">00:15 ~ 00:30 (Storage &amp; Image Engineering)</span>
+        </div>
+        <h2 class="slide-title">1.5 오토스케일링 생존율을 결정하는 Golden Image 파이프라인</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 트래픽이 폭주해 오토스케일러가 VM 50대를 동시에 띄웠는데, 부팅 스크립트에서 <code>apt-get install</code>을 실행하다 외부 미러 서버 지연이나 Cloud NAT 대역폭 포화로 부팅이 10분씩 걸리면 어떻게 될까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-warn">
+            <div class="card-title">안티 패턴: 무거운 Startup Script 의존</div>
+            <ul class="bullet-list">
+              <li>부팅 시마다 OS 패키지, 런타임(JDK/Node/Python), 보안 에이전트를 외부 저장소에서 실시간 다운로드</li>
+              <li><strong>부팅 지연(3~10분 소요):</strong> 급격한 트래픽 스파이크 시 스케일 아웃 속도가 유입 속도를 따라잡지 못함</li>
+              <li><strong>외부 장애 전파 및 버전 드리프트:</strong> 외부 저장소 순단 시 신규 VM 부팅 전체가 실패하며, 생성 시점마다 패키지 세부 버전이 달라지는 불일치 발생</li>
+            </ul>
+          </div>
+
+          <div class="card card-highlight">
+            <div class="card-title">프로덕션 표준: Golden Image + 경량 Startup Script</div>
+            <ul class="bullet-list">
+              <li><strong>Golden Image (불변 아티팩트):</strong> Packer + Cloud Build로 OS 하드닝, <code>gVNIC</code>, Ops Agent, 런타임, 앱 바이너리를 사전 구워 <strong>Image Family</strong>로 버전 관리 (부팅 후 <strong>20~40초 내 Ready</strong>)</li>
+              <li><strong>경량 Startup Script의 역할:</strong> 외부 다운로드 없이 메타데이터나 Secret Manager에서 환경 변수만 읽어 로컬 설정 파일을 렌더링하고 <code>systemctl start</code>만 수행</li>
+              <li><strong>Shutdown Script 주의점:</strong> 선점형/Spot VM은 30초, 일반 VM 중지/삭제 시에는 최대 90초의 ACPI 종료 유예 시간 내에 종료 처리가 끝나야 합니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <span class="code-title">Image Family 기반 무중단 이미지 버전 승격 및 롤백 흐름</span>
+          <pre><code>[Packer + Cloud Build] ──▶ prod-was-v20261019 생성 ──▶ Image Family (prod-was-family) 포인터가 항상 최신 검증 이미지를 가리킴
+  * 문제 발생 시: gcloud compute images deprecate --state=DEPRECATED 로 이전 검증 이미지로 즉시 포인터 복구</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>"런타임에는 절대 외부에서 패키지를 설치하지 않는다"는 불변 인프라(Immutable Infrastructure) 원칙이 Session 2 MIG 오토스케일링의 전제 조건입니다.</div>
+        <div class="next-bridge">다음: 1.6 Global VPC와 Shared VPC 아키텍처 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        이 슬라이드는 다음 세션(Session 2 MIG)과 직결됩니다. MIG가 아무리 빨리 VM을 찍어내도, 부팅 후 스크립트가 5분 동안 패키지를 받고 있으면 오토스케일링은 사실상 무용지물이 됩니다. Golden Image로 30초 내 기동을 보장해야 합니다.
+      </div>
+    </section>
+
+    <!-- Slide 8: Session 1.6 Global VPC & Shared VPC -->
+    <section class="slide" data-session="s1" data-title="1.6 네트워크 베이스라인: Global VPC와 Shared VPC">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (6/7)</span>
+          <span class="slide-time">00:30 ~ 00:45 (Network &amp; Security Baseline)</span>
+        </div>
+        <h2 class="slide-title">1.6 리전과 존의 경계를 허무는 Global VPC와 Shared VPC 구조</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 타 클라우드에서는 가용 영역(AZ)마다 서브넷 CIDR을 쪼개고, 계정마다 VPC를 만든 뒤 Transit Gateway로 묶느라 라우팅 테이블과 게이트웨이 비용이 기하급수적으로 늘어납니다. GCP는 왜 다를까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">타 클라우드(AZ별 서브넷 분리) vs Google Cloud(리전 단위 단일 서브넷 + Global VPC)</span>
+          <pre><code>[타 클라우드 VPC]  리전 종속 VPC ──▶ AZ-a 서브넷(10.0.1.0/24) / AZ-b 서브넷(10.0.2.0/24) / AZ-c 서브넷(10.0.3.0/24) (존 이동 시 IP 대역 변경 강제)
+[Google Cloud VPC] 글로벌 단일 VPC ──▶ 서울 리전 단일 서브넷(10.10.0.0/20)이 Zone A, Zone B, Zone C 전체를 포괄 (동일 대역에서 멀티존 HA 구성)</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Global VPC + 리전 단일 서브넷의 이점</div>
+            <ul class="bullet-list">
+              <li><strong>단일 CIDR로 3개 존(Zone) 커버:</strong> 서브넷이 존(Zone)이 아닌 <strong>리전(Region) 리소스</strong>이므로, 존별 IP 고갈 걱정 없이 하나의 서브넷 위에서 멀티존 클러스터(Regional MIG)를 운영합니다.</li>
+              <li><strong>글로벌 동적 라우팅 (<code>GLOBAL</code> 모드):</strong> 서울 리전에만 전용선(Interconnect)과 Cloud Router를 연결해도, 동일 VPC 내 도쿄/미국 리전의 서브넷까지 별도 피어링 없이 BGP로 자동 광고·통신됩니다.</li>
+            </ul>
+          </div>
+
+          <div class="card card-highlight">
+            <div class="card-title">엔터프라이즈 표준: Shared VPC 권한 분리</div>
+            <ul class="bullet-list">
+              <li><strong>Host Project (네트워크/보안팀 전담):</strong> 중앙 VPC, 서브넷, 전용선/VPN, Cloud NAT, 계층형 방화벽을 중앙에서 독점 관리합니다.</li>
+              <li><strong>Service Project (서비스 개발팀):</strong> 각 서비스팀은 독립된 프로젝트에서 VM과 MIG를 생성하되, 네트워크 인터페이스만 Host Project의 특정 서브넷에 연결(<code>roles/compute.networkUser</code>)합니다.</li>
+              <li><strong>비용 및 성능 이점:</strong> 동일 리전 내 Shared VPC 간 통신은 별도의 Transit Gateway 어태치먼트 비용이나 홉 지연 없이 Andromeda SDN 위에서 직접 통신합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>서브넷이 3개 존에 걸쳐 있다는 특성은 다음 세션에서 다룰 <strong>Regional MIG와 Stateful 고정 IP 보존</strong>을 가능케 하는 핵심 기반입니다.</div>
+        <div class="next-bridge">다음: 1.7 IAM Tags 방화벽과 OS Login + IAP 보안 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        네트워크 운영팀이 가장 크게 체감하는 차이점입니다. AWS에서는 AZ마다 서브넷이 쪼개져 있어 IP 대역 설계가 파편화되지만, GCP는 서브넷이 Region 단위이므로 하나의 `/20` 서브넷 안에서 Zone A/B/C VM들이 모두 동일 대역 IP를 할당받습니다.
+      </div>
+    </section>
+
+    <!-- Slide 9: Session 1.7 Firewall, Metadata & OS Login + IAP -->
+    <section class="slide" data-session="s1" data-title="1.7 보안 베이스라인: IAM Tags 방화벽과 OS Login + IAP">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge">Session 1 · GCE 코어 아키텍처 (7/7)</span>
+          <span class="slide-time">00:30 ~ 00:45 (Network &amp; Security Baseline)</span>
+        </div>
+        <h2 class="slide-title">1.7 제로 트러스트 방화벽(IAM Tags)과 Bastion 없는 접근 통제</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 개발자가 임의로 바꿀 수 있는 Network Tag는 보안 감사를 통과할 수 없고, Service Account 기반 방화벽은 변경 시 VM을 중지해야 하며 VPC Peering을 넘지 못합니다. 엔터프라이즈의 최종 해답은 무엇일까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 16%;">방화벽 방식</th>
+              <th style="width: 26%;">Network Tags (레거시 태그)</th>
+              <th style="width: 28%;">Service Account 기반 방화벽</th>
+              <th style="width: 30%;">IAM Tags + Network Firewall Policy (권장)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>권한 통제 및 제약</strong></td>
+              <td>VM 수정 권한만 있으면 누구나 태그를 붙여 방화벽 우회 가능 (보안 취약)</td>
+              <td>IAM으로 통제되나, <strong>SA 변경 시 VM 중지(Stop) 필요</strong> 및 VPC Peering 미지원</td>
+              <td><strong>Tag Admin 권한으로 엄격히 분리</strong>되며, <strong>무중단 실시간 변경</strong> 및 VPC Peering·조직 계층 상속 완벽 지원</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Metadata Server (<code>169.254.169.254</code>) SSRF 방어</div>
+            <ul class="bullet-list">
+              <li>웹 앱의 SSRF 취약점을 통한 자격증명 탈취를 막기 위해, GCP 메타데이터 서버는 HTTP 헤더에 <code>Metadata-Flavor: Google</code>이 없는 모든 요청을 즉시 거부합니다.</li>
+              <li>VM에는 기본 Compute Engine SA 대신 <strong>워크로드별 최소 권한 커스텀 SA</strong>를 할당합니다.</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">Bastion VM을 없애는 OS Login + IAP Tunneling</div>
+            <ul class="bullet-list">
+              <li>모든 VM에서 공인 IP와 수동 SSH 키 배포를 제거합니다.</li>
+              <li>방화벽에는 Google IAP 대역(<code>35.235.240.0/20</code>)의 TCP 22번만 허용하고, <code>enable-oslogin=TRUE</code>를 켜서 Cloud Identity IAM 권한 및 2FA를 리눅스 PAM/NSS와 실시간 연동합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">Session 1 마무리</span>단일 VM의 고성능 하드웨어(Titanium/Hyperdisk)와 네트워크·보안 베이스라인이 준비되었습니다. 이제 이 VM들을 무중단 클러스터로 묶어봅니다.</div>
+        <div class="next-bridge">다음: Session 2.1 UMIG vs Regional MIG 아키텍처 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        Session 1의 마지막 슬라이드입니다. 여기서 IAM Tags 방화벽과 OS Login + IAP로 보안 베이스라인을 닫아주면서, 자연스럽게 "이제 이렇게 안전하고 빠른 단일 VM을 어떻게 수십 대의 무중단 클러스터(Session 2)로 운영할 것인가?"로 질문을 던지며 넘어갑니다.
+      </div>
+    </section>
+
+    <!-- Slide 10: Session 2.1 UMIG vs Regional MIG & Distribution Shape -->
+    <section class="slide" data-session="s2" data-title="2.1 UMIG vs Regional MIG 및 멀티존 분산 알고리즘">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (1/7)</span>
+          <span class="slide-time">00:45 ~ 00:58 (UMIG vs MIG &amp; Topology)</span>
+        </div>
+        <h2 class="slide-title">2.1 UMIG vs Regional MIG와 멀티존 분산 알고리즘(Shape)</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> Session 1에서 만든 단일 서브넷은 리전 내 3개 존(Zone A/B/C)에 걸쳐 있습니다. 이 위에서 단일 존 장애(Zone Outage)가 발생해도 서비스가 중단되지 않으려면 인스턴스들을 어떤 구조로 묶고 분산해야 할까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 16%;">구분</th>
+              <th style="width: 26%;">Unmanaged IG (UMIG)</th>
+              <th style="width: 28%;">Zonal MIG (단일 존 관리형)</th>
+              <th style="width: 30%;">Regional MIG (멀티존 관리형 · 권장)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>핵심 특징 및 용도</strong></td>
+              <td>서로 다른 스펙의 수동 VM 묶음. 오토스케일링·자동 복구·롤링 업데이트 불가 (레거시 수동 서버 LB 연결용)</td>
+              <td>단일 존 내부에서만 템플릿 기반 생성·복구. 해당 존 장애 시 그룹 전체 중단 (고성능 HPC 등 초저지연 클러스터용)</td>
+              <td><strong>1개 서브넷 위에서 3개 존(Zone A/B/C)에 인스턴스를 자동 분산</strong>. 특정 존 장애 시 나머지 정상 존으로 용량 유지</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid-3">
+          <div class="card card-highlight">
+            <div class="card-title">1. EVEN (기본값 · 무상태 표준)</div>
+            <ul class="bullet-list">
+              <li>3개 존에 인스턴스 대수를 정확히 1/3씩 균등하게 맞춥니다.</li>
+              <li>Proactive Redistribution을 켜면 존 간 불균형 발생 시 자동으로 VM을 재배치하여 33:33:33 비율을 강제합니다.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-title">2. BALANCED (재고 부족 방어)</div>
+            <ul class="bullet-list">
+              <li>기본적으로 균등 분산을 추구하되, 특정 존에 일시적 하드웨어 재고 부족(Stockout) 발생 시 <strong>가용 자원이 있는 다른 존에 먼저 VM을 생성</strong>해 전체 목표 대수를 사수합니다.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-title">3. ANY / ANY_SINGLE_ZONE</div>
+            <ul class="bullet-list">
+              <li><code>ANY</code>: 존 균형과 무관하게 가장 빨리 띄울 수 있는 곳에 생성 (배치 작업용)</li>
+              <li><code>ANY_SINGLE_ZONE</code>: 가용한 하나의 존을 골라 모든 노드를 몰아넣어 교차 존 네트워크 지연을 제거합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>프로덕션 WAS/API 티어는 <code>Regional MIG (EVEN 또는 BALANCED)</code>를 표준으로 채택하며, 로컬 캐시 의존도가 높다면 Proactive Redistribution을 비활성화합니다.</div>
+        <div class="next-bridge">다음: 2.2 무중단 Rolling Update 파라미터 설계 공식 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        타 클라우드의 Auto Scaling Group(ASG)과 가장 큰 차이는 Target Distribution Shape입니다. 특히 Proactive Redistribution이 켜져 있으면, 존 간 대수를 맞추기 위해 멀쩡히 돌던 VM을 예고 없이 삭제 후 다른 존에 다시 띄울 수 있으므로 상태성 캐시가 있는 서버에서는 주의해야 함을 짚어주세요.
+      </div>
+    </section>
+
+    <!-- Slide 11: Session 2.2 Rolling Update Math -->
+    <section class="slide" data-session="s2" data-title="2.2 무중단 배포: Rolling Update 파라미터 설계 공식">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (2/7)</span>
+          <span class="slide-time">00:58 ~ 01:10 (Zero-Downtime Rollout)</span>
+        </div>
+        <h2 class="slide-title">2.2 불변 템플릿과 Rolling Update 무중단 배포 공식</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> GCE의 Instance Template은 한 번 만들면 수정할 수 없는 불변(Immutable) 리소스입니다. 새 버전의 템플릿(`v2`)을 배포할 때 단 1건의 요청 실패도 없이 넘어가는 파라미터 조합 공식은 무엇일까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">Surge Rolling Update 무중단 교체 타임라인 (maxUnavailable = 0, maxSurge = 3)</span>
+          <pre><code>[단계 1: Surge 생성] 기존 v1 인스턴스 6대는 100% 유지한 채, 3개 존에 신규 v2 인스턴스 3대를 추가 생성 (총 9대 가동)
+        │
+[단계 2: Readiness &amp; Warm-up] 신규 v2 인스턴스가 LB Health Check를 통과한 직후 minReadySec(예: 60초) 동안 JIT 컴파일 및 커넥션 풀 예열
+        │
+[단계 3: 구버전 Draining] 신규 v2가 트래픽을 정상 처리하면 비로소 구버전 v1 인스턴스 3대에 Connection Draining 후 종료</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">반드시 지켜야 할 3대 파라미터 공식</div>
+            <ul class="bullet-list">
+              <li><strong>1. <code>maxUnavailable = 0</code>:</strong> 배포 중에도 기존 처리 용량이 100% 아래로 떨어지지 않도록 강제합니다.</li>
+              <li><strong>2. Regional MIG에서 <code>maxSurge >= 3</code>:</strong> 3개 존(Zone A/B/C)에서 동시에 1대씩 병렬로 새 버전을 띄우려면 최소 존 개수(3) 이상으로 설정해야 배포 시간이 1/3로 단축됩니다.</li>
+              <li><strong>3. <code>minReadySec</code> 설정:</strong> 프로세스 포트만 열렸다고 바로 구버전을 죽이지 않도록, JVM/앱 예열 시간(30~60초)을 부여합니다.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-title">교체 방식: <code>SUBSTITUTE</code> vs <code>RECREATE</code></div>
+            <ul class="bullet-list">
+              <li><strong><code>SUBSTITUTE</code> (기본값 · 무상태 권장):</strong> 새로운 이름과 IP를 가진 새 VM을 옆에 먼저 띄운 뒤 기존 VM을 삭제합니다. 가장 빠르고 안전합니다.</li>
+              <li><strong><code>RECREATE</code> (Stateful 필수):</strong> 기존 VM의 이름·고정 IP·디스크를 그대로 물려받아야 할 때 사용합니다. 기존 VM을 먼저 내려야 하므로 <code>maxUnavailable=0</code>과 함께 쓸 수 없습니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>무상태 서비스의 롤링 업데이트 표준 공식은 <code>type=PROACTIVE</code> + <code>maxUnavailable=0</code> + <code>maxSurge=3(또는 20%)</code> + <code>replacementMethod=SUBSTITUTE</code>입니다.</div>
+        <div class="next-bridge">다음: 2.3 카나리 배포(Canary Rollout) 아키텍처 비교 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        실무에서 Regional MIG에 `maxSurge=1`을 넣어서 배포가 한 존씩 순차 진행되느라 3배로 느려지는 경우가 많습니다. 3개 존 Regional MIG에서는 `maxSurge`를 최소 3(존당 1대) 이상으로 주어야 병렬 롤아웃이 된다는 팁을 강조하세요.
+      </div>
+    </section>
+
+    <!-- Slide 12: Session 2.3 Canary Deployment -->
+    <section class="slide" data-session="s2" data-title="2.3 카나리 배포 아키텍처: 단일 MIG 분할 vs 별도 MIG 분리">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (3/7)</span>
+          <span class="slide-time">00:58 ~ 01:10 (Canary Strategy)</span>
+        </div>
+        <h2 class="slide-title">2.3 리스크를 통제하는 2가지 카나리(Canary) 배포 패턴</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 전체 인스턴스를 한 번에 롤링 업데이트하기 부담스러운 대규모 변경에서는 일부 인스턴스(예: 10%)에만 먼저 신규 버전을 올려 에러율을 검증해야 합니다. GCP에서는 어떤 두 가지 방식이 있을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">패턴 A: 단일 MIG 내 다중 템플릿 버전 분할 (Built-in Canary)</div>
+            <ul class="bullet-list">
+              <li>하나의 MIG 안에서 기본 버전(<code>v1</code>) 외에 카나리 버전(<code>v2</code>)의 <code>targetSize</code>를 고정 대수 또는 비율(예: 10%)로 지정합니다.</li>
+              <li><strong>장점:</strong> 별도의 인프라 리소스 추가 없이 명령어 한 줄로 즉시 카나리 배포 및 롤백이 가능합니다.</li>
+              <li><strong>한계:</strong> 카나리 비율이 <strong>인스턴스 대수 기준</strong>으로만 결정되므로, HTTP 헤더(`X-Canary: true`) 기반 라우팅이나 1% 미만의 미세 트래픽 제어는 불가합니다.</li>
+            </ul>
+            <div class="code-box" style="margin-top: auto;">
+              <span class="code-title">단일 MIG 내 10% 카나리 배포 명령</span>
+              <pre><code>gcloud compute instance-groups managed rolling-action start-update was-mig   --version=template=was-tpl-v1   --canary-version=template=was-tpl-v2,target-size=10%</code></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">패턴 B: 별도 카나리 MIG 분리 + ALB 가중치 라우팅</div>
+            <ul class="bullet-list">
+              <li>안정 버전용 <code>prod-mig-stable</code>과 카나리 전용 <code>prod-mig-canary</code>를 별도 그룹과 별도 Backend Service로 분리합니다.</li>
+              <li>Application Load Balancer(Envoy 기반)의 URL Map에서 <strong><code>weightedBackendServices</code>(가중치 99:1)</strong> 또는 특정 쿠키/헤더 매칭 규칙으로 트래픽을 분기합니다.</li>
+              <li><strong>장점:</strong> 인스턴스 대수와 무관하게 0.5%, 1% 단위의 정밀한 트래픽 가중치 조절 및 사내 테스트 헤더 분기가 가능합니다.</li>
+            </ul>
+            <div class="code-box" style="margin-top: auto;">
+              <span class="code-title">ALB URL Map 기반 가중치 분기 구조</span>
+              <pre><code>[ALB URL Map] ─┬─▶ 99% 가중치 ──▶ Backend Service A (stable MIG)
+               └─▶  1% 가중치 ──▶ Backend Service B (canary MIG)</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>일반적인 정기 배포는 <strong>패턴 A(단일 MIG 내 카나리)</strong>로 단순하게 운영하고, 결제/코어 API처럼 헤더 기반 검증과 1% 단위 제어가 필요한 경우 <strong>패턴 B</strong>를 선택합니다.</div>
+        <div class="next-bridge">다음: 2.4 Autoscaling 및 Scale-in Control ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        단일 MIG 내 카나리 기능은 Regional MIG에서 `target-size`를 지정할 때 3개 존에 골고루 분포되도록 최소 3대 이상이거나 `EVEN` 제약을 완화해야 할 수 있다는 실무 디테일을 덧붙이면 좋습니다.
+      </div>
+    </section>
+
+    <!-- Slide 13: Session 2.4 Autoscaling & Scale-in Control -->
+    <section class="slide" data-session="s2" data-title="2.4 Autoscaling 다중 지표 및 Scale-in Control">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (4/7)</span>
+          <span class="slide-time">01:10 ~ 01:25 (Autoscaling &amp; Stability)</span>
+        </div>
+        <h2 class="slide-title">2.4 예측형 스케일링과 급격한 축소를 막는 Scale-in Control</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 트래픽이 빠졌다고 오토스케일러가 100대이던 서버를 단 2분 만에 20대로 확 줄여버리면, 살아남은 20대의 로컬 캐시가 깨지고 2차 트래픽 유입 시 커넥션 스톰으로 장애가 납니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">다중 지표 결합 및 예측형 스케일링</div>
+            <ul class="bullet-list">
+              <li><strong>다중 시그널 OR 평가:</strong> CPU 사용률(예: 60%), LB 용량 사용률, Cloud Monitoring 커스텀 메트릭(예: 메시지 큐 적체 건수)을 동시에 등록하면, <strong>가장 큰 대수를 요구하는 지표</strong>를 따라 안전하게 확장합니다.</li>
+              <li><strong>초기화 시간(<code>coolDownPeriodSec</code>):</strong> Golden Image 부팅부터 앱이 정상 트래픽을 받을 때까지 걸리는 시간(예: 60~90초)으로 설정해 부팅 중 CPU 100%에 의한 과잉 확장을 막습니다.</li>
+              <li><strong>예측형 스케일링 (<code>OPTIMIZE_AVAILABILITY</code>):</strong> 일간/주간 트래픽 패턴을 학습해 피크 타임 도달 전에 미리 VM을 띄워둡니다.</li>
+            </ul>
+          </div>
+
+          <div class="card card-highlight">
+            <div class="card-title">프로덕션 필수 안전장치: Scale-in Control</div>
+            <ul class="bullet-list">
+              <li><strong>Scale-out은 즉각적으로, Scale-in은 보수적으로!</strong></li>
+              <li><code>timeWindowSec</code>(예: 600초) 동안 관측된 <strong>최대 권장 인스턴스 수</strong>를 기준으로, 한 번에 줄어들 수 있는 최대 대수(<code>maxScaledInReplicas</code>)를 제한합니다.</li>
+              <li>예: 최근 10분간 피크가 100대였고 축소 한도를 20%로 설정하면, 트래픽이 0으로 떨어져도 <strong>10분 동안 절대 80대 미만으로 내려가지 않고</strong> 완만하게 계단식으로 축소됩니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <span class="code-title">gcloud CLI · 최근 10분 피크 대비 최대 20%까지만 축소를 허용하는 Scale-in Control 적용</span>
+          <pre><code>gcloud compute instance-groups managed update-autoscaling prod-was-mig   --region=asia-northeast3   --scale-in-control=max-scaled-in-replicas-percent=20,time-window=600</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>프로덕션 MIG에는 반드시 <code>scale_in_control</code>을 설정하여 일시적 트래픽 골짜기(Dip)에서 서버가 대량 삭제되는 플래핑(Flapping)을 차단해야 합니다.</div>
+        <div class="next-bridge">다음: 2.5 Autohealing(Liveness) vs LB(Readiness) 분리 원칙 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        오토스케일링 장애의 절반 이상은 스케일 아웃이 아니라 너무 빠른 스케일 인(Scale-in) 때문에 발생합니다. `scale_in_control` 설정 하나만으로도 피크 타임 직후의 2차 장애를 완벽히 예방할 수 있습니다.
+      </div>
+    </section>
+
+    <!-- Slide 14: Session 2.5 Liveness vs Readiness Separation -->
+    <section class="slide" data-session="s2" data-title="2.5 헬스 체크 설계: Autohealing(Liveness)과 LB(Readiness) 분리">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (5/7)</span>
+          <span class="slide-time">01:10 ~ 01:25 (Health Check Architecture)</span>
+        </div>
+        <h2 class="slide-title">2.5 왜 Autohealing과 LB Health Check를 절대 합치면 안 되는가?</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 쿠버네티스에서 Liveness Probe와 Readiness Probe를 구분하듯, GCE에서도 <strong>MIG Autohealing 헬스 체크</strong>와 <strong>Load Balancer 헬스 체크</strong>의 목적과 실패 시 액션은 완전히 다릅니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">안티 패턴: DB 연결 확인(/healthz/db)을 Autohealing 헬스 체크에 그대로 연결했을 때의 연쇄 재앙</span>
+          <pre><code>[백엔드 DB 30초 순단 발생] ──▶ 모든 WAS VM이 /healthz/db에 500 응답 반환
+  ├─▶ [LB Health Check라면]  단순히 트래픽 라우팅만 일시 보류하거나 페일오버 동작 (DB 복구 즉시 1초 만에 전체 정상화!)
+  └─▶ [Autohealing에 썼다면] MIG 컨트롤러가 "모든 WAS VM이 고장났다!"고 판단해 전체 WAS VM을 동시에 삭제 및 재생성 (전면 장애!)</code></pre>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 18%;">비교 항목</th>
+              <th style="width: 41%;">Load Balancer Health Check (Readiness · 트래픽 수신 준비)</th>
+              <th style="width: 41%;">MIG Autohealing Health Check (Liveness · VM 생존 여부)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>핵심 질문</strong></td>
+              <td>"지금 이 VM에 고객 요청을 보내도 정상 처리할 수 있는가?"</td>
+              <td>"이 VM의 로컬 데몬이 완전히 죽어서 <strong>장비를 부수고 새로 만들어야 하는가?</strong>"</td>
+            </tr>
+            <tr>
+              <td><strong>실패 시 동작</strong></td>
+              <td>해당 VM으로 가는 <strong>신규 트래픽만 즉시 차단</strong> (VM은 삭제하지 않고 계속 헬스 체크 폴링)</td>
+              <td>해당 VM을 <strong>강제 삭제(Delete)하고 새 VM을 처음부터 재생성(Recreate)</strong></td>
+            </tr>
+            <tr>
+              <td><strong>권장 엔드포인트 및 주기</strong></td>
+              <td><code>/healthz/ready</code> (워밍업 완료, 필수 의존성 상태, 우아한 종료 플래그 반영)<br>주기: <strong>빠르고 민감하게</strong> (<code>interval=5s</code>, <code>unhealthyThreshold=2</code> -> 10초 내 격리)</td>
+              <td><code>/healthz/live</code> (외부 DB/API는 절대 보지 않고 오직 로컬 프로세스 생존만 확인)<br>주기: <strong>보수적이고 여유 있게</strong> (<code>interval=15~30s</code>, <code>unhealthyThreshold=3~5</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">골든 룰</span>Autohealing 엔드포인트(<code>/healthz/live</code>)에는 외부 DB, Redis, 타 마이크로서비스 연결 체크 로직을 절대 넣지 마십시오.</div>
+        <div class="next-bridge">다음: 2.6 무중단 Graceful Shutdown 시퀀스 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        실제 장애 사례에서 가장 빈번하게 나오는 실수입니다. DB가 잠깐 흔들렸을 뿐인데 WAS 50대가 동시에 Autohealing으로 삭제되면서 복구 시간이 30초에서 20분으로 늘어나는 상황을 도식으로 명확히 각인시켜 주세요.
+      </div>
+    </section>
+
+    <!-- Slide 15: Session 2.6 Graceful Shutdown -->
+    <section class="slide" data-session="s2" data-title="2.6 트래픽 유실 없는 Graceful Shutdown 시퀀스">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (6/7)</span>
+          <span class="slide-time">01:10 ~ 01:25 (Graceful Shutdown)</span>
+        </div>
+        <h2 class="slide-title">2.6 배포·축소 시 패킷 유실 0건을 만드는 Graceful Shutdown 공식</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 롤링 업데이트나 스케일 인으로 VM이 내려갈 때, 아직 처리 중인 결제 요청이 끊기거나 LB가 이미 죽어가는 VM으로 새 요청을 보내는 현상을 어떻게 막을 수 있을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">LB Connection Draining과 VM Shutdown Script의 시간차 동기화 타임라인</span>
+          <pre><code>[T = 0초]   MIG가 VM 삭제 시작 ──▶ 1) LB가 즉시 해당 VM으로의 신규 연결 차단 (Connection Draining 타이머 예: 60초 시작)
+                               ──▶ 2) 동시에 게스트 OS 내부에서 google-guest-agent가 Shutdown Script 실행
+[T = 1~5초] Shutdown Script가 로컬 /healthz/ready 상태를 503으로 바꾸고 5초 대기 (인플라이트 패킷 유입 완전 차단 보장)
+[T = 5~40초] 웹서버/WAS에 SIGTERM(nginx -s quit)을 보내 기존 연결의 트랜잭션이 끝날 때까지 우아하게 대기 후 프로세스 종료
+[T = 60초]  LB Connection Draining 만료 및 VM 안전 삭제 완료 (클라이언트 에러 0건)</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">1단계: Backend Service Connection Draining</div>
+            <ul class="bullet-list">
+              <li>로드 밸런서의 Backend Service에 <code>--connection-draining-timeout=60s</code>(최대 3600초 가능)를 설정합니다.</li>
+              <li>MIG에서 인스턴스 삭제가 트리거되는 순간 LB는 새 요청 유입을 막고, 기존에 맺어진 TCP 세션이 완료될 때까지 지정된 시간을 기다려 줍니다.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-title">2단계: 게스트 OS Shutdown Script 연동</div>
+            <ul class="bullet-list">
+              <li>단순히 OS가 바로 <code>SIGKILL</code>로 앱을 죽이지 않도록, Shutdown Script에서 먼저 <code>/healthz/ready</code>를 실패 상태로 만든 뒤 <code>sleep 5</code> 후 <code>SIGTERM</code>을 호출합니다.</li>
+              <li>이를 통해 LB 제어 플레인의 전파 지연(1~3초) 동안 들어올 수 있는 마지막 요청까지 100% 안전하게 처리합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>무중단 배포의 완성은 새 서버를 띄우는 것(Surge)뿐만 아니라, 내려가는 서버의 <code>Connection Draining + Shutdown Script</code>를 맞추는 데 있습니다.</div>
+        <div class="next-bridge">다음: 2.7 Stateful MIG 아키텍처와 3대 제약사항 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        Connection Draining만 켜두면 끝이라고 생각하기 쉽지만, 실제로는 MIG가 삭제를 시작할 때 VM OS에도 ACPI 종료 신호가 전달됩니다. 따라서 앱이 즉시 죽지 않고 인플라이트 요청을 마무리하도록 Shutdown Script나 systemd `ExecStop`에서 Draining 대기를 맞춰주어야 합니다.
+      </div>
+    </section>
+
+    <!-- Slide 16: Session 2.7 Stateful MIG -->
+    <section class="slide" data-session="s2" data-title="2.7 Stateful MIG 운영 패턴 및 3대 구조적 제약사항">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s2">Session 2 · Instance Group 라이프사이클 (7/7)</span>
+          <span class="slide-time">01:25 ~ 01:35 (Stateful MIG Operations)</span>
+        </div>
+        <h2 class="slide-title">2.7 고정 IP와 디스크를 보존하는 Stateful MIG와 3대 구조적 한계</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 금융권 대외계 연동처럼 방화벽 화이트리스트 때문에 고정 IP가 필수이거나, 호스트명과 데이터 디스크가 그대로 유지되어야 하는 워크로드도 MIG의 자동 복구(Autohealing) 혜택을 받을 수 있을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">Stateful MIG가 보존하는 4가지 상태</div>
+            <ul class="bullet-list">
+              <li><strong>1. 인스턴스 이름 보존:</strong> VM이 재생성되어도 동일한 호스트명 유지</li>
+              <li><strong>2. 영구 디스크(PD/Hyperdisk) 보존:</strong> VM 장애로 삭제 후 재생성될 때 기존 디스크를 지우지 않고 새 VM에 그대로 재부착 (<code>autoDelete=false</code>)</li>
+              <li><strong>3. 내부 및 외부 고정 IP 보존:</strong> 장애 복구 후에도 동일한 사설/공인 IP 주소를 그대로 재할당</li>
+              <li><strong>4. Per-instance 메타데이터 보존:</strong> <code>broker_id=1</code> 등 노드별 고유 설정값 유지</li>
+            </ul>
+          </div>
+
+          <div class="card card-warn">
+            <div class="card-title">도입 전 반드시 알아야 할 3대 구조적 제약사항</div>
+            <ul class="bullet-list">
+              <li><strong>1. Autoscaling 동시 사용 불가:</strong> 각 노드가 고유 상태와 디스크를 가지므로 자동 수평 확장(Autoscaling)을 켤 수 없습니다.</li>
+              <li><strong>2. 교차 존(Cross-Zone) 자동 페일오버 불가:</strong> Autohealing은 <strong>장애가 난 바로 그 존(Zone) 안에서만</strong> VM을 다시 띄우고 디스크를 재부착합니다. 존 전체가 죽으면 타 존으로 자동 이동하지 않습니다.</li>
+              <li><strong>3. 업데이트 시 <code>RECREATE</code> 강제:</strong> 동일한 이름·IP·디스크를 새 VM에 물려야 하므로 기존 VM을 먼저 내렸다가 올리는 순단 방식만 가능합니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <span class="code-title">운영자 주의사항: 단일 VM API(compute instances)가 아닌 반드시 MIG API(instance-groups managed)로 제어할 것!</span>
+          <pre><code># [주의] gcloud compute instances delete 로 직접 지우면 MIG가 장애로 판단해 즉시 다시 살려냅니다!
+# 특정 Stateful 인스턴스를 영구 제거하거나 재구축할 때는 반드시 MIG 명령어를 사용하세요:
+gcloud compute instance-groups managed recreate-instances prod-stateful-mig --instances=node-01 --zone=asia-northeast3-a</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">Session 2 마무리</span>이제 무상태/상태유지 클러스터(MIG)가 완성되었습니다. 다음 Session 3에서는 이 클러스터 앞단의 Cloud Load Balancing과 네트워크를 해부합니다.</div>
+        <div class="next-bridge">다음: Session 3.1 GFE, Andromeda, Maglev, Envoy 아키텍처 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        고객사 인프라팀에서 고정 IP 요구사항 때문에 Stateful MIG를 자주 검토합니다. 보존 기능은 매우 훌륭하지만 "존 전체 장애 시 타 존으로 자동 이동하지는 않는다"는 점을 명확히 설명해야 아키텍처 오해를 막을 수 있습니다.
+      </div>
+    </section>
+
+    <!-- Slide 17: Session 3.1 Core LB Architecture -->
+    <section class="slide" data-session="s3" data-title="3.1 GCP Load Balancing 기반 아키텍처: GFE, Andromeda, Maglev, Envoy">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (1/9)</span>
+          <span class="slide-time">01:35 ~ 01:48 (Core SDN Architecture)</span>
+        </div>
+        <h2 class="slide-title">3.1 GFE, Andromeda SDN, Maglev, Envoy 기반 소프트웨어 정의 아키텍처</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 타 클라우드의 로드 밸런서는 고객 VPC 서브넷 안에 가상 어플라이언스(인스턴스)를 띄우므로 급격한 트래픽 유입 시 LB 자체가 스케일 아웃되는 데 수 분이 걸립니다. GCP는 왜 사전 예열(Pre-warming)이 필요 없을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">Google Cloud Load Balancing 글로벌 엣지 및 호스트 SDN 데이터 플레인</span>
+          <pre><code>[인터넷 클라이언트] ──(단일 Anycast VIP)──▶ [전 세계 80+ 엣지 PoP: Maglev (L4 해싱) + GFE / Envoy (L7 종료·WAF)]
+                                                        │ (Google 글로벌 광케이블 백본 최단 경로 진입)
+                                                        ▼
+                                       [고객 VPC 호스트 하이퍼바이저: Andromeda SDN] ──▶ [백엔드 MIG VM / NEG]</code></pre>
+        </div>
+
+        <div class="grid-4">
+          <div class="card card-highlight">
+            <div class="card-title">1. Maglev (L4 분산 해싱)</div>
+            <ul class="bullet-list">
+              <li>엣지 PoP 최전방의 소프트웨어 L4 패킷 분산기입니다.</li>
+              <li><strong>Consistent Hashing</strong>으로 중앙 상태 동기화 없이 수백 대의 노드가 동일한 백엔드로 패킷을 보내며, 초당 수백만 RPS를 예열 없이 즉시 수용합니다.</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">2. GFE (Google Front End)</div>
+            <ul class="bullet-list">
+              <li>사용자와 가장 가까운 엣지 PoP에서 TCP/TLS 핸드셰이크를 즉시 종료합니다.</li>
+              <li>해외/원거리 클라이언트의 초기 연결 RTT 지연을 대폭 줄이고 L3/L4 DDoS 공격을 엣지에서 흡수합니다.</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">3. Envoy (L7 트래픽 엔진)</div>
+            <ul class="bullet-list">
+              <li>차세대 External/Regional/Internal ALB(`*_MANAGED`)의 데이터 플레인입니다.</li>
+              <li>정교한 헤더 조작, 정규식 라우팅, 가중치 카나리 분기, 서킷 브레이커, 상호 TLS(mTLS)를 제공합니다.</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">4. Andromeda SDN</div>
+            <ul class="bullet-list">
+              <li>Internal Passthrough NLB는 아예 중간 프록시 서버가 없습니다.</li>
+              <li>클라이언트 VM이 속한 호스트의 가상 스위치(Andromeda)가 목적지 VIP를 보고 백엔드 VM 호스트로 <strong>워프하듯 직접 캡슐화 전송</strong>합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>Google Cloud LB는 고객 VPC 안에 갇힌 가상 장비가 아니라 전 세계 엣지와 SDN에 상시 가동 중인 거대한 공유 패브릭에 라우팅 규칙을 배포하는 방식입니다.</div>
+        <div class="next-bridge">다음: 3.2 Classic ALB vs Envoy 기반 ALB와 Proxy-only Subnet ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        Session 3의 포문을 여는 핵심 슬라이드입니다. 공식 외부 문서(Cloud Load Balancing overview)에 명시된 4대 핵심 기술(Maglev, GFE, Envoy, Andromeda)의 역할을 한눈에 정리해 주면 뒤이어 나올 Proxy vs Passthrough 차이가 아주 명확해집니다.
+      </div>
+    </section>
+
+    <!-- Slide 18: Session 3.2 Classic vs Envoy ALB & Proxy-only Subnet -->
+    <section class="slide" data-session="s3" data-title="3.2 Classic ALB vs Envoy 기반 ALB 및 Proxy-only Subnet">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (2/9)</span>
+          <span class="slide-time">01:35 ~ 01:48 (ALB Architecture &amp; Proxy-only Subnet)</span>
+        </div>
+        <h2 class="slide-title">3.2 Classic ALB vs 차세대 Envoy ALB와 Proxy-only Subnet의 정체</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> Internal ALB나 Regional ALB를 만들 때 왜 갑자기 <code>--purpose=REGIONAL_MANAGED_PROXY</code>라는 특수 서브넷을 먼저 만들라고 요구할까요? 그 서브넷 IP들은 누가 쓰는 걸까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 16%;">비교 항목</th>
+              <th style="width: 26%;">Classic ALB (<code>EXTERNAL</code>)</th>
+              <th style="width: 28%;">Global External ALB (<code>EXTERNAL_MANAGED</code>)</th>
+              <th style="width: 30%;">Regional / Internal ALB (<code>*_MANAGED</code>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>기반 프록시 엔진</strong></td>
+              <td>1세대 GFE 전용</td>
+              <td><strong>GFE + Envoy 프록시 결합 (권장 표준)</strong></td>
+              <td><strong>리전 내 분산 Envoy 프록시 풀</strong></td>
+            </tr>
+            <tr>
+              <td><strong>고급 트래픽 제어</strong></td>
+              <td>기본 호스트/경로 라우팅만 지원</td>
+              <td colspan="2"><strong>가중치 기반 트래픽 분할(Weight Split), 요청/응답 헤더 재작성, Fault Injection, Mirroring, Outlier Detection 지원</strong></td>
+            </tr>
+            <tr>
+              <td><strong>백엔드 연결 Source IP</strong></td>
+              <td>Google 공용 대역<br>(<code>35.191.0.0/16</code>, <code>130.211.0.0/22</code>)</td>
+              <td>Google 공용 대역<br>(<code>35.191.0.0/16</code>, <code>130.211.0.0/22</code>)</td>
+              <td><strong>고객 VPC 내 Proxy-only Subnet 대역에서 SNAT되어 백엔드 VM으로 유입!</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">Proxy-only Subnet 동작 원리 및 설계 기준</div>
+            <ul class="bullet-list">
+              <li>Google이 관리하는 리전 Envoy 프록시들이 고객 VPC 내부의 백엔드 VM과 TCP 통신을 맺을 때 사용할 <strong>전용 소스 IP(SNAT IP) 풀</strong>입니다.</li>
+              <li>고객이 이 서브넷에 직접 VM을 띄울 수는 없으며, 리전당 VPC별로 딱 1개만 생성하면 해당 리전의 모든 Envoy 기반 LB가 공유합니다.</li>
+              <li><strong>권장 서브넷 크기:</strong> 대규모 트래픽 확장 시 프록시 인스턴스 증설을 수용하도록 최소 <strong><code>/23</code>(512개 IP) 이상</strong> 할당을 권장합니다.</li>
+            </ul>
+          </div>
+          <div class="code-box" style="margin: 0; display: flex; flex-direction: column; justify-content: center;">
+            <span class="code-title">gcloud CLI · 서울 리전 Proxy-only Subnet 생성 및 방화벽 허용</span>
+            <pre><code># 1. 리전 내 Envoy 전용 Proxy-only Subnet(/23) 생성
+gcloud compute networks subnets create proxy-only-seoul   --purpose=REGIONAL_MANAGED_PROXY   --role=ACTIVE   --region=asia-northeast3   --network=prod-vpc   --range=10.129.0.0/23
+
+# 2. 백엔드 VM 인바운드 방화벽에 위 대역(10.129.0.0/23) 허용 필수!</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>신규 L7 구축 시에는 항상 <code>EXTERNAL_MANAGED</code> 또는 <code>INTERNAL_MANAGED</code>를 선택하고, VPC 설계 초기에 리전별 <code>/23</code> Proxy-only Subnet을 예약합니다.</div>
+        <div class="next-bridge">다음: 3.3 Proxy LB vs Passthrough LB 패킷 흐름 비교 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        네트워크팀이 Internal ALB를 처음 만들 때 가장 많이 겪는 트러블슈팅이 "분명히 클라이언트 서브넷 대역을 방화벽에서 열었는데 왜 백엔드 연결이 안 되지?"입니다. Envoy가 중간에서 연결을 대리(SNAT)하므로 방화벽에는 클라이언트 IP가 아니라 Proxy-only Subnet 대역을 열어주어야 한다는 점을 강조하세요.
+      </div>
+    </section>
+
+    <!-- Slide 19: Session 3.3 Proxy LB vs Passthrough LB -->
+    <section class="slide" data-session="s3" data-title="3.3 Proxy LB vs Passthrough LB 패킷 흐름 완벽 비교">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (3/9)</span>
+          <span class="slide-time">01:48 ~ 02:02 (Proxy vs Passthrough Packet Flow)</span>
+        </div>
+        <h2 class="slide-title">3.3 Proxy LB(연결 종료·재수립) vs Passthrough LB(DSR) 패킷 비교</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 백엔드 애플리케이션에서 <code>getRemoteAddr()</code>를 찍었을 때 어떤 LB는 프록시 IP가 찍히고, 어떤 LB는 실제 클라이언트의 원본 IP가 그대로 찍힙니다. 두 아키텍처의 패킷 헤더는 어떻게 다를까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">패킷 헤더(Src IP / Dst IP) 및 TCP 세션 경계 비교</span>
+          <pre><code>[1. Proxy LB (ALB / Proxy NLB)]      클라이언트(203.0.113.5) ──(TCP 세션 #1: Dst=VIP)──▶ [GFE/Envoy 프록시] ──(별도 TCP 세션 #2: Src=프록시SNAT, Dst=VM_IP)──▶ [백엔드 VM]
+[2. Passthrough LB (Passthrough NLB)] 클라이언트(203.0.113.5) ──(단일 TCP 세션 유지: Src=203.0.113.5, Dst=LB_VIP 그대로!)──(Andromeda SDN 캡슐화)──▶ [백엔드 VM]</code></pre>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 18%;">비교 항목</th>
+              <th style="width: 41%;">Proxy 기반 LB (Application LB, Proxy Network LB)</th>
+              <th style="width: 41%;">Passthrough 기반 LB (External / Internal Passthrough NLB)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>TCP / TLS 세션 처리</strong></td>
+              <td>프록시(GFE/Envoy)에서 클라이언트 연결을 <strong>완전히 종료(Terminate)</strong>하고, 백엔드 VM과 <strong>새로운 TCP 연결을 수립</strong></td>
+              <td>연결을 종료하지 않고 클라이언트가 보낸 <strong>원본 패킷 그대로</strong> Andromeda SDN을 통해 백엔드 VM에 직접 전달</td>
+            </tr>
+            <tr>
+              <td><strong>백엔드가 보는 Src / Dst IP</strong></td>
+              <td>• <strong>Src IP:</strong> GFE 대역 또는 Proxy-only Subnet IP (SNAT됨)<br>• <strong>Dst IP:</strong> 백엔드 VM 자신의 Private NIC IP (<code>10.10.1.5</code>)</td>
+              <td>• <strong>Src IP:</strong> <strong>클라이언트 원본 IP 100% 보존!</strong><br>• <strong>Dst IP:</strong> VM IP가 아닌 <strong>로드 밸런서의 VIP 주소 그대로 도착!</strong></td>
+            </tr>
+            <tr>
+              <td><strong>클라이언트 원IP 확인 방법</strong></td>
+              <td>L7 ALB는 <code>X-Forwarded-For</code> 헤더, L4 Proxy NLB는 <code>PROXY protocol v1/v2</code> 헤더 파싱 필요</td>
+              <td>별도 헤더 파싱 없이 소켓 레이어(L3 헤더)에서 즉시 원본 IP 확인 가능</td>
+            </tr>
+            <tr>
+              <td><strong>응답 패킷 경로</strong></td>
+              <td>백엔드 VM → 프록시(Envoy/GFE) → 클라이언트 (대칭 경로)</td>
+              <td>백엔드 VM이 LB를 다시 거치지 않고 <strong>클라이언트에게 직접 응답(DSR, Direct Server Return)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 질문</span>Passthrough LB에서 목적지 IP가 내 VM IP(<code>10.10.1.5</code>)가 아닌 LB VIP(<code>10.10.99.99</code>)로 날아오는데, 왜 리눅스 커널이 이 패킷을 버리지(Drop) 않을까요?</div>
+        <div class="next-bridge">다음: 3.4 Passthrough DSR과 proto 66 로컬 라우트의 비밀 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        이 슬라이드 하단의 핵심 질문("왜 백엔드 VM 커널이 자기 IP가 아닌 LB VIP 패킷을 드롭하지 않는가?")을 던지며 다음 슬라이드(Slide 20)로 넘어가면 네트워크 엔지니어들의 집중도가 최고조에 달합니다.
+      </div>
+    </section>
+
+    <!-- Slide 20: Session 3.4 DSR & proto 66 Under the Hood -->
+    <section class="slide" data-session="s3" data-title="3.4 Passthrough LB(DSR)와 커널 proto 66 로컬 라우트의 비밀">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (4/9)</span>
+          <span class="slide-time">01:48 ~ 02:02 (Under the Hood: DSR &amp; proto 66)</span>
+        </div>
+        <h2 class="slide-title">3.4 왜 백엔드 VM은 목적지가 LB VIP인 패킷을 드롭하지 않는가?</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 온프레미스 L4 스위치에서 DSR(Direct Server Return)을 구성할 때는 모든 서버의 Loopback 인터페이스에 VIP를 수동 등록하고 ARP 응답을 꺼야 했습니다. GCE는 이를 어떻게 완전 자동화했을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">백엔드 VM 리눅스 커널의 local 라우팅 테이블 실체 확인 (ip route show table local proto 66)</span>
+          <pre><code>$ ip route show table local proto 66
+local 10.10.99.99 dev ens4 proto 66 scope host    # <-- google-guest-agent가 LB VIP(10.10.99.99)를 내 로컬 IP처럼 자동 주입!</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">자동화된 DSR 동작 3단계</div>
+            <ul class="bullet-list">
+              <li><strong>1. 메타데이터 동기화:</strong> MIG가 Passthrough NLB의 백엔드로 연결되면, Andromeda 컨트롤 플레인이 해당 VM의 메타데이터(<code>instance/network-interfaces/0/forwarded-ips</code>)에 LB VIP 주소를 기록합니다.</li>
+              <li><strong>2. <code>proto 66</code> 로컬 라우트 주입:</strong> VM 내부의 <code>google-guest-agent</code> 데몬이 이를 감지하여 커널 <code>local</code> 라우팅 테이블에 <code>proto 66</code>으로 LB VIP를 자동 등록합니다.</li>
+              <li><strong>3. Direct Server Return 응답:</strong> 리눅스 커널은 목적지(`10.10.99.99`)를 자기 자신의 IP로 인식해 애플리케이션 소켓으로 올리고, 응답할 때도 출발지 IP에 <code>10.10.99.99</code>를 찍어 클라이언트에게 직접 반환합니다.</li>
+            </ul>
+          </div>
+
+          <div class="card card-warn">
+            <div class="card-title">실무 트러블슈팅 주의사항 2가지</div>
+            <ul class="bullet-list">
+              <li><strong>주의 1 (커스텀 이미지 데몬 누락):</strong> 자체 제작한 이미지에서 <code>google-guest-agent</code> 서비스를 끄거나 삭제하면, <code>proto 66</code> 라우트가 생성되지 않아 Passthrough NLB 헬스 체크가 100% 실패합니다.</li>
+              <li><strong>주의 2 (Hairpinning 자기 호출 금지):</strong> 백엔드 VM 자신이 자기가 속한 Passthrough NLB의 VIP를 호출하면, 패킷이 외부로 나가지 않고 커널 <code>local</code> 테이블에 의해 자기 자신(Loopback)으로 바로 꺾여 들어갑니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>Passthrough NLB 헬스 체크가 안 붙을 때는 방화벽 확인과 함께 백엔드 VM 안에서 <code>ip route show table local proto 66</code>에 VIP가 떠 있는지 확인하십시오.</div>
+        <div class="next-bridge">다음: 3.5 L7 ALB &amp; L4 NLB 5단계 컴포넌트 체인 해부 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        이 슬라이드는 네트워크 운영팀이 가장 좋아하는 실전 아키텍처 팁입니다. 특히 백엔드 서버가 자기 자신의 Internal NLB VIP로 API를 호출했다가 다른 노드로 분산되지 않고 무조건 자기 자신에게만 요청이 꽂히는 '헤어피닝(Hairpinning)' 현상의 원인이 바로 이 `local` 테이블 때문임을 설명하면 무릎을 칩니다.
+      </div>
+    </section>
+
+    <!-- Slide 21: Session 3.5 Modular Component Chain -->
+    <section class="slide" data-session="s3" data-title="3.5 L7 ALB & L4 NLB 5단계 모듈형 컴포넌트 해부">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (5/9)</span>
+          <span class="slide-time">02:02 ~ 02:16 (L7/L4 Component Anatomy)</span>
+        </div>
+        <h2 class="slide-title">3.5 왜 GCP Load Balancer는 5개의 리소스로 조립하도록 설계되었는가?</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 타 클라우드에서는 LB 하나를 만들면 리스너와 타겟 그룹만 있는데, GCP에서는 왜 <code>Forwarding Rule → Target Proxy → URL Map → Backend Service → MIG/NEG</code>로 세분화되어 있을까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">L7 Application Load Balancer vs L4 Passthrough Network Load Balancer 조립 체인 비교</span>
+          <pre><code>[L7 ALB 체인]  Forwarding Rule (VIP+포트) ──▶ Target HTTPS Proxy (TLS 인증서+보안정책) ──▶ URL Map (호스트/경로 분기) ──▶ Backend Service (Cloud Armor/Draining/HC) ──▶ MIG / NEG
+[L4 NLB 체인]  Forwarding Rule (VIP+포트) ───────────────────────────────────────────────────────────────────────────▶ Backend Service (세션 어피니티/HC)         ──▶ MIG / NEG</code></pre>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 18%;">컴포넌트 계층</th>
+              <th style="width: 38%;">핵심 역할 및 담당 설정</th>
+              <th style="width: 44%;">모듈형 분리 설계가 주는 엔터프라이즈 운영 이점</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Forwarding Rule</strong></td>
+              <td>클라이언트가 접속하는 진입점 VIP 주소, 프로토콜, 포트 번호, Network Tier 정의</td>
+              <td>IPv4 VIP용 Forwarding Rule과 IPv6 VIP용 Forwarding Rule 2개를 만들어 <strong>동일한 하나의 Target Proxy에 동시 연결</strong> 가능</td>
+            </tr>
+            <tr>
+              <td><strong>2. Target Proxy</strong></td>
+              <td>TCP/TLS 세션 종료, Certificate Manager SSL 인증서 매핑, SSL 정책(TLS 1.2/1.3 강제), QUIC(HTTP/3) 활성화</td>
+              <td>HTTP(80) 프록시와 HTTPS(443) 프록시를 각각 두거나 인증서 교체 시 백엔드 구성을 전혀 건드리지 않고 독립 변경</td>
+            </tr>
+            <tr>
+              <td><strong>3. URL Map</strong></td>
+              <td>L7 라우팅 테이블: 호스트명(<code>api.example.com</code>), 경로(<code>/v1/pay</code>), 헤더 기반 분기 및 카나리 가중치 분할</td>
+              <td>마이크로서비스 수십 개가 <strong>단 하나의 글로벌 Anycast VIP와 URL Map을 공유</strong>하면서 뒤쪽 Backend Service만 팀별로 분리</td>
+            </tr>
+            <tr>
+              <td><strong>4. Backend Service</strong></td>
+              <td>Balancing Mode, Session Affinity, Connection Draining, <strong>Keep-alive/응답 타임아웃(기본 30초)</strong>, Cloud Armor WAF, Health Check</td>
+              <td>동일 서비스의 서울 리전 MIG와 도쿄 리전 MIG를 <strong>하나의 Backend Service에 함께 등록</strong>하여 글로벌 자동 페일오버 구현</td>
+            </tr>
+            <tr>
+              <td><strong>5. MIG / Zonal NEG</strong></td>
+              <td>실제 트래픽을 처리하는 GCE VM 그룹(MIG) 또는 컨테이너 파드 IP:Port 엔드포인트(Zonal NEG)</td>
+              <td>VM에서 GKE 컨테이너로 마이그레이션할 때, URL Map이나 Backend Service에서 백엔드만 MIG → NEG로 무중단 스위칭</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>5단계 컴포넌트 분리는 단일 VIP 아래에서 수십 개의 VM 그룹과 GKE 서비스를 레고 블록처럼 조합하고 무중단 마이그레이션하기 위한 설계입니다.</div>
+        <div class="next-bridge">다음: 3.6 온프레미스 하이브리드 BGP 연동 및 중앙 방화벽 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        처음 GCP를 접할 때 리소스 개수가 많아 보여 복잡하다고 느끼지만, 각 리소스의 역할(L3 진입점 / L4·TLS 종료 / L7 라우팅 테이블 / 백엔드 정책 / 워크로드 풀)을 짚어주면 Terraform 모듈화나 GKE 전환 시 왜 이 구조가 훨씬 유리한지 바로 이해합니다.
+      </div>
+    </section>
+
+    <!-- Slide 22: Session 3.6 Hybrid Networking & BGP -->
+    <section class="slide" data-session="s3" data-title="3.6 하이브리드 네트워크 연동: 온프레미스 BGP 및 중앙 방화벽(NVA)">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (6/9)</span>
+          <span class="slide-time">02:02 ~ 02:16 (Hybrid Network &amp; NVA Routing)</span>
+        </div>
+        <h2 class="slide-title">3.6 전용선(Interconnect)/VPN 환경에서의 Internal LB 연동과 NVA 체이닝</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 온프레미스 데이터센터와 전용선(Dedicated/Partner Interconnect)을 연결하고 BGP 라우팅까지 정상 확인했는데, 왜 온프레미스 서버에서 GCP의 Internal LB VIP를 호출하면 타임아웃이 날까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">1. 온프레미스 → Internal LB 호출 시 필수 설정</div>
+            <ul class="bullet-list">
+              <li><strong>원인:</strong> Internal Passthrough NLB와 Internal ALB의 Forwarding Rule은 기본적으로 <strong>동일 리전 내의 클라이언트만 접근 허용</strong>하도록 잠겨 있습니다.</li>
+              <li><strong>해결책 (Global Access 활성화):</strong> 온프레미스 네트워크나 타 리전 서브넷에서 Internal LB VIP를 호출하려면 반드시 Forwarding Rule에 <strong><code>--allow-global-access</code></strong> 플래그를 켜야 합니다.</li>
+              <li><strong>하이브리드 역방향(GCP LB → 온프레미스 서버):</strong> 반대로 GCP LB 뒤에 온프레미스 서버 IP:Port를 붙여 카나리 이관을 할 때는 <strong>Hybrid Connectivity NEG(<code>NON_GCP_PRIVATE_IP_PORT</code>)</strong>를 사용합니다.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">2. 서드파티 방화벽 어플라이언스(NVA) 무중단 이중화</div>
+            <ul class="bullet-list">
+              <li>온프레미스처럼 VRRP(Active-Standby)로 방화벽 VM을 구성하면 페일오버가 느리고 대역폭이 절반으로 낭비됩니다.</li>
+              <li><strong>GCP 표준 아키텍처 (<code>--next-hop-ilb</code>):</strong> 멀티 NIC 기반 방화벽 VM들을 Regional MIG(Active-Active)로 묶고, 그 앞에 <strong>Internal Passthrough NLB</strong>를 배치한 뒤 VPC 커스텀 라우트의 Next Hop을 해당 NLB로 지정합니다.</li>
+              <li><strong>대칭 해싱(Symmetric Hashing):</strong> Andromeda SDN이 오가는 패킷의 5-Tuple을 대칭 해싱하여 항상 동일한 방화벽 VM을 통과하도록 보장하므로 세션 테이블 깨짐이 없습니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <span class="code-title">gcloud CLI · 온프레미스 접근을 허용하는 Internal LB Global Access 활성화 및 Next-Hop ILB 라우트</span>
+          <pre><code># 1. 온프레미스 및 타 리전에서 Internal LB VIP 접근 허용
+gcloud compute forwarding-rules update internal-was-fr --region=asia-northeast3 --allow-global-access
+
+# 2. VPC 기본 라우트(0.0.0.0/0)의 Next Hop을 방화벽 MIG 앞단의 Internal Passthrough NLB로 지정
+gcloud compute routes create default-via-fw-nlb --network=spoke-vpc --destination-range=0.0.0.0/0 --next-hop-ilb=fw-inspect-nlb</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>전용선/VPN 환경에서 Internal LB를 생성할 때는 Terraform 기본 템플릿에 <code>allow_global_access = true</code>를 표준으로 포함하십시오.</div>
+        <div class="next-bridge">다음: 3.7 대규모 아웃바운드 Cloud NAT 포트 고갈 방지 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        네트워크 운영팀 실무에서 가장 자주 겪는 두 가지 주제입니다. 첫째는 온프레미스에서 Internal LB 호출 시 `--allow-global-access` 누락, 둘째는 Palo Alto/Fortinet 같은 NVA 방화벽 VM을 어떻게 Active-Active로 무중단 구성하는가인데 `--next-hop-ilb`가 정답입니다.
+      </div>
+    </section>
+
+    <!-- Slide 23: Session 3.7 Cloud NAT Port Exhaustion -->
+    <section class="slide" data-session="s3" data-title="3.7 대규모 아웃바운드 환경의 Cloud NAT 포트 고갈 방지">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (7/9)</span>
+          <span class="slide-time">02:02 ~ 02:16 (Outbound Cloud NAT Sizing)</span>
+        </div>
+        <h2 class="slide-title">3.7 외부 API 집중 호출 시 Cloud NAT 포트 고갈(OUT_OF_RESOURCES) 해결</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 공인 IP가 없는 Private VM들이 외부 카드사·은행·알림톡 API와 초당 수천 건의 통신을 할 때, VM CPU와 대역폭은 널널한데 간헐적으로 아웃바운드 연결 타임아웃이 발생하는 이유는 무엇일까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">단일 외부 목적지(IP:Port) 집중 호출 시 Cloud NAT 동시 연결 한계 및 TIME_WAIT 누적 공식</span>
+          <pre><code>* NAT 공인 IP 1개당 사용할 수 있는 총 소스 포트 수 = 64,512개 (1,024 ~ 65,535)
+* 만약 백엔드 VM들이 동일한 외부 PG사 서버(예: 211.x.x.x:443) 하나에 매 요청마다 새 TCP 연결을 맺고 끊는다면?
+  ──▶ 닫힌 소켓도 커널 및 NAT 테이블에서 120초(TIME_WAIT) 동안 포트를 점유!
+  ──▶ VM당 기본 정적 할당(64 포트) 사용 시, 해당 VM은 초당 단 0.5건(64 / 120초)만 연결해도 즉시 포트 고갈(OUT_OF_RESOURCES) 발생!</code></pre>
+        </div>
+
+        <div class="grid-3">
+          <div class="card card-highlight">
+            <div class="card-title">1. Dynamic Port Allocation 활성화</div>
+            <ul class="bullet-list">
+              <li>고정 64포트 대신 트래픽이 몰리는 VM에 <code>minPortsPerVm(예: 1024)</code>부터 <code>maxPortsPerVm(예: 16384)</code>까지 포트를 동적으로 즉시 증설합니다.</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">2. Endpoint-Independent Mapping 해제</div>
+            <ul class="bullet-list">
+              <li><code>--no-enable-endpoint-independent-mapping</code>을 확인합니다.</li>
+              <li>비활성화 시 서로 다른 외부 목적지 IP:Port에 대해서는 <strong>동일한 NAT 소스 포트를 재사용(5-Tuple 구분)</strong>할 수 있어 포트 효율이 수십 배 높아집니다.</li>
+            </ul>
+          </div>
+          <div class="card card-highlight">
+            <div class="card-title">3. 다중 NAT IP 산정 공식 &amp; 연결 풀링</div>
+            <ul class="bullet-list">
+              <li>필요 NAT 공인 IP 수 공식:<br><code>ceil( (VM 수 × 최대 포트) / 64,512 )</code></li>
+              <li>애플리케이션 코드에서도 외부 API 호출 시 매번 소켓을 닫지 않고 <strong>HTTP Keep-Alive 커넥션 풀</strong>을 재사용해야 합니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>외부 연동이 많은 VPC의 Cloud NAT에는 반드시 <code>Dynamic Port Allocation</code>과 충분한 수동 고정 NAT IP 풀을 사전 할당하십시오.</div>
+        <div class="next-bridge">다음: 3.8 Balancing Mode와 Autoscaler 임계치 설계 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        핀테크·커머스 환경에서 실제로 가장 많이 발생하는 네트워크 장애 중 하나가 Cloud NAT 포트 고갈입니다. CloudNAT 역시 호스트 Andromeda SDN에서 분산 처리되므로 병목 장비는 없지만, 공인 IP당 64,512개라는 물리적 포트 수 한계와 `TIME_WAIT` 2분 규칙 때문에 포트 산정이 필수임을 짚어주세요.
+      </div>
+    </section>
+
+    <!-- Slide 24: Session 3.8 Balancing Mode & Autoscaler -->
+    <section class="slide" data-session="s3" data-title="3.8 LB Balancing Mode 설계와 Autoscaler 임계치 연동">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (8/9)</span>
+          <span class="slide-time">02:16 ~ 02:30 (LB + MIG Operational Tuning)</span>
+        </div>
+        <h2 class="slide-title">3.8 Balancing Mode(UTILIZATION vs RATE)와 트래픽 쏠림 방지</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> Load Balancer의 Backend Service에도 <code>maxUtilization(기본 80%)</code> 설정이 있고, MIG Autoscaler에도 <code>targetCpuUtilization</code> 설정이 있습니다. 이 둘의 관계가 어긋나면 어떤 기현상이 벌어질까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">잘못된 설계 시나리오: LB maxUtilization(0.8) &lt; MIG Autoscaler CPU 임계치(0.85) 일 때의 부하 전이</span>
+          <pre><code>[Zone A의 CPU가 81% 도달] ──▶ MIG Autoscaler는 아직 85%가 안 되었으므로 VM을 늘리지 않고 가만히 있음!
+                          ──▶ 반면 LB는 "Zone A 용량(80%)이 꽉 찼다!"고 판단하여 잉여 트래픽을 다른 존/리전으로 우회(Spillover)시킴!</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">Balancing Mode 선택 기준</div>
+            <ul class="bullet-list">
+              <li><strong><code>RATE</code> (초당 요청 수 RPS 기준 · L7 ALB 권장):</strong> 인스턴스당 처리 가능한 최대 RPS(예: <code>maxRatePerInstance = 500</code>)를 기준으로 분배합니다. CPU 지연 신호보다 즉각적이고 예측 가능한 분산을 제공합니다.</li>
+              <li><strong><code>UTILIZATION</code> (백엔드 CPU + 사용률 기준):</strong> 요청마다 걸리는 작업 시간 편차가 매우 큰 워크로드에 적합합니다.</li>
+              <li><strong><code>CONNECTION</code> (동시 연결 수 기준 · L4 Proxy NLB):</strong> 장시간 연결을 유지하는 TCP/WebSocket 워크로드에 사용합니다.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Autoscaler 임계치와의 연동 골든 룰</div>
+            <ul class="bullet-list">
+              <li><strong>항상 Autoscaler가 LB 상한선보다 먼저 반응해야 합니다!</strong></li>
+              <li>예: MIG Autoscaler 목표치를 <strong>60%~65%</strong>로 잡고, Backend Service의 최대 용량 상한(<code>maxUtilization</code>)은 <strong>80%</strong>로 두어, LB가 트래픽을 다른 곳으로 밀어내기 전에 MIG가 먼저 스케일 아웃되도록 설계합니다.</li>
+              <li>또한 <code>capacityScaler</code> 파라미터(0.0 ~ 1.0)를 사용하면 특정 백엔드 그룹으로 가는 트래픽 비율을 즉시 줄이거나 차단(<code>0.0</code>)할 수 있습니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span><code>MIG Autoscaler Target (60%) &lt; LB Max Capacity (80%)</code> 부등식을 항상 유지해야 예기치 않은 교차 존 트래픽 넘침(Spillover)을 막을 수 있습니다.</div>
+        <div class="next-bridge">다음: 3.9 [핵심] Keep-alive 타임아웃 미스매치 502 에러 해결 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        LB의 Balancing Mode 설정값은 단순한 모니터링 숫자가 아니라 실제로 LB가 해당 그룹에 트래픽을 더 보낼지 말지를 결정하는 라우팅 캡(Cap)이라는 점을 강조하세요.
+      </div>
+    </section>
+
+    <!-- Slide 25: Session 3.9 Keep-alive 502 Bad Gateway -->
+    <section class="slide" data-session="s3" data-title="3.9 Keep-alive 타임아웃 불일치로 인한 간헐적 502 Bad Gateway 해결">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s3">Session 3 · Cloud Load Balancing 심화 (9/9 · 핵심 트러블슈팅)</span>
+          <span class="slide-time">02:16 ~ 02:30 (Keep-alive 502 Race Condition)</span>
+        </div>
+        <h2 class="slide-title">3.9 간헐적 502 Bad Gateway의 주범: Keep-alive Race Condition과 620초 공식</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 서버 CPU도 10% 미만이고 애플리케이션 에러 로그도 전혀 없는데, 하루에 수십 건씩 간헐적으로 <code>502 Bad Gateway</code>가 발생합니다. 전 세계 클라우드 엔지니어들이 가장 많이 겪는 이 문제의 정확한 원인과 해결 공식은 무엇일까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">LB 프록시(600초) vs 백엔드 웹서버(기본 5~75초) Keep-alive 불일치로 인한 TCP FIN / HTTP 요청 충돌 과정</span>
+          <pre><code>[GFE / Envoy 프록시] ◀──(기존 재사용 유휴 TCP 연결)──▶ [백엔드 Nginx(기본 65초) / Node.js(기본 5초) / Tomcat(기본 20초)]
+  1) 유휴 시간이 65초가 되는 순간, 백엔드 웹서버가 스스로 소켓을 닫기 위해 LB 쪽으로 [TCP FIN] 패킷을 전송!
+  2) 바로 그 찰나(수 ms 차이), 패킷이 아직 도착하기 전에 LB 프록시는 이 연결이 살아있는 줄 알고 새 고객의 [HTTP POST 요청]을 전송!
+  3) 이미 소켓을 닫은 백엔드 커널이 [TCP RST]로 거부 ──▶ LB가 클라이언트에게 502 Bad Gateway 반환! (로그: backend_connection_closed_before_data_sent_to_client)</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">절대 불변의 방지 공식: 백엔드 Keep-alive = 620초!</div>
+            <ul class="bullet-list">
+              <li>Google Cloud ALB(GFE 및 Envoy)의 백엔드 유휴 연결(Keep-alive) 타임아웃은 <strong>600초(10분)로 고정</strong>되어 있습니다.</li>
+              <li><strong>해결 원리:</strong> 항상 백엔드 웹서버가 먼저 연결을 끊지 말고, <strong>LB 프록시가 600초에 먼저 안전하게 연결을 정리하도록</strong> 백엔드의 Keep-alive 타임아웃을 600초보다 큰 <strong><code>620초</code></strong>로 설정하면 Race Condition이 원천 소멸됩니다.</li>
+            </ul>
+          </div>
+
+          <div class="code-box" style="margin: 0; display: flex; flex-direction: column; justify-content: center;">
+            <span class="code-title">언어·웹서버별 백엔드 Keep-alive 620초 필수 설정 코드</span>
+            <pre><code># [1. Nginx (nginx.conf)]
+keepalive_timeout 620s;
+keepalive_requests 100000;   # 기본 1000건 도달 시 조기 종료 방지
+
+# [2. Node.js (Express / Fastify / NestJS)]
+server.keepAliveTimeout = 620 * 1000;
+server.headersTimeout   = 625 * 1000;  # keepAliveTimeout보다 크게!
+
+# [3. Spring Boot (application.yml) / Go (http.Server)]
+server.tomcat.keep-alive-timeout: 620s   # Go: IdleTimeout: 620 * time.Second</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">Session 3 마무리</span>사내 표준 Golden Image의 Nginx/Tomcat/Node.js 설정에 <code>Keep-alive 620초</code>를 기본 박아두면 간헐적 502 장애를 100% 예방할 수 있습니다.</div>
+        <div class="next-bridge">다음: Session 4.1 Ops Agent와 심층 관측성 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        오늘 3시간 강의 중 참석자들이 당장 내일 프로덕션 설정에 반영할 수 있는 가장 가치 있는 실무 팁입니다. 특히 Nginx에서 `keepalive_timeout 620s;`뿐만 아니라 `keepalive_requests`도 충분히 키워야 요청 횟수 도달로 인해 백엔드가 먼저 연결을 끊는 현상을 막을 수 있다는 디테일을 짚어주세요.
+      </div>
+    </section>
+
+    <!-- Slide 26: Session 4.1 Ops Agent & Observability -->
+    <section class="slide" data-session="s4" data-title="4.1 하이퍼바이저 메트릭의 한계와 Ops Agent 기반 심층 관측">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s4">Session 4 · Day-2 트러블슈팅 및 IaC (1/5)</span>
+          <span class="slide-time">02:30 ~ 02:40 (Observability &amp; Bottleneck Analysis)</span>
+        </div>
+        <h2 class="slide-title">4.1 왜 기본 모니터링에는 메모리 사용률이 없으며 Ops Agent는 무엇을 수집하는가?</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> GCE VM을 만들고 콘솔을 열면 CPU와 디스크 I/O는 바로 보이지만, 정작 가장 중요한 <strong>실제 가용 메모리(Available Memory)와 디스크 파티션 사용량(%)</strong>은 보이지 않습니다. 왜 그럴까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%;">수집 계층</th>
+              <th style="width: 38%;">하이퍼바이저 기본 메트릭 (<code>compute.googleapis.com/*</code>)</th>
+              <th style="width: 42%;">Ops Agent 심층 메트릭 (<code>agent.googleapis.com/*</code> · 필수)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>수집 원리</strong></td>
+              <td>호스트 하이퍼바이저가 VM 외부에서 관측 (에이전트 불필요, 보안상 게스트 OS 커널 내부는 들여다보지 않음)</td>
+              <td>게스트 OS 내부에 설치된 <strong>OpenTelemetry(메트릭) + Fluent Bit(로그)</strong> 통합 에이전트가 커널 <code>/proc</code> 및 애플리케이션 상태를 수집</td>
+            </tr>
+            <tr>
+              <td><strong>주요 수집 지표</strong></td>
+              <td>vCPU 사용률, 네트워크 바이트/패킷, 블록 디바이스 전체 Read/Write IOPS</td>
+              <td><strong>실제 메모리 사용률(<code>memory/percent_used</code>, Buffer/Cache 구분)</strong>, 마운트 경로별 디스크 여유 공간(<code>disk/percent_used</code>), 프로세스별 CPU/FD 점유율, TCP <code>TIME_WAIT</code> 소켓 수</td>
+            </tr>
+            <tr>
+              <td><strong>로그 파이프라인</strong></td>
+              <td>직렬 콘솔(Serial Port 1) 부팅 로그만 선택적 수집</td>
+              <td><code>/var/log/messages</code>, <code>syslog</code> 및 Nginx/Tomcat/애플리케이션 JSON 구조화 로그를 Cloud Logging으로 실시간 스트리밍</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-box">
+          <span class="code-title">Ops Agent 설정 (/etc/google-cloud-ops-agent/config.yaml) · JSON 애플리케이션 로그 및 Nginx 메트릭 통합 수집</span>
+          <pre><code>logging:
+  receivers:
+    was_json_log:
+      type: files
+      include_paths: [/var/log/was/app.json.log]
+  processors:
+    parse_json:
+      type: parse_json
+      time_key: timestamp
+      time_format: "%Y-%m-%dT%H:%M:%S.%L%Z"</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>Session 1의 Golden Image(Packer) 단계에 <code>google-cloud-ops-agent</code> 설치를 기본 포함하여 메모리 기반 오토스케일링과 OOM 감지를 활성화합니다.</div>
+        <div class="next-bridge">다음: 4.2 LB 로그 지연 지표 비교를 통한 1분 내 병목 특정 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        리눅스 커널은 남은 메모리를 Page Cache로 활용하므로 외부 하이퍼바이저에서 보면 항상 메모리가 99% 찬 것처럼 보입니다. 따라서 실제 애플리케이션이 쓸 수 있는 `available` 메모리를 정확히 알기 위해서는 게스트 내부의 Ops Agent가 필수입니다.
+      </div>
+    </section>
+
+    <!-- Slide 27: Session 4.2 LB Latency Triage -->
+    <section class="slide" data-session="s4" data-title="4.2 LB 로그 지연 지표 비교를 통한 1분 내 병목 구간 특정">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s4">Session 4 · Day-2 트러블슈팅 및 IaC (2/5)</span>
+          <span class="slide-time">02:30 ~ 02:40 (Latency Triage)</span>
+        </div>
+        <h2 class="slide-title">4.2 API가 느려졌을 때 1분 안에 네트워크 vs 백엔드 책임 구간 가려내기</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> "오늘 결제 응답이 3초나 걸려요! 로드 밸런서나 네트워크 문제 아닌가요?"라는 문의가 왔을 때, Cloud Load Balancing 로그의 두 가지 지연 시간 필드만 비교하면 1분 안에 범인을 특정할 수 있습니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="code-box">
+          <span class="code-title">Cloud Load Balancing 요청 처리 구간별 지연 시간 측정 범위</span>
+          <pre><code>[클라이언트 단말] ◀────── (인터넷/모바일 구간 RTT 및 대용량 페이로드 전송) ──────▶ [GFE / Envoy 프록시] ◀──── (순수 백엔드 처리 시간) ────▶ [백엔드 WAS VM]
+                 │◀──────────────────────── 1. httpRequest.latency (total_latencies) ────────────────────────▶│
+                                                                                   │◀─ 2. backend_target_latency ─▶│</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">케이스 A: <code>total_latency</code> ≈ <code>backend_latency</code> (예: 둘 다 2.8초)</div>
+            <ul class="bullet-list">
+              <li><strong>진단 결과: 100% 백엔드 애플리케이션 또는 DB 병목!</strong></li>
+              <li>LB 프록시가 백엔드 VM에 요청을 넘긴 뒤 첫 응답이 돌아올 때까지 2.8초가 걸렸다는 뜻입니다.</li>
+              <li><strong>조치:</strong> 네트워크나 LB를 의심할 필요 없이 해당 시간대 백엔드 WAS의 스레드 풀 고갈, GC Pause, DB 슬로우 쿼리를 즉시 조사합니다.</li>
+            </ul>
+          </div>
+
+          <div class="card card-warn">
+            <div class="card-title">케이스 B: <code>total_latency</code>(3.0초) &gt;&gt; <code>backend_latency</code>(0.05초)</div>
+            <ul class="bullet-list">
+              <li><strong>진단 결과: 백엔드는 50ms 만에 응답 완료! 클라이언트·전송 구간 지연!</strong></li>
+              <li><strong>원인 1:</strong> 모바일 음영 지역에 있는 클라이언트가 대용량 이미지/파일을 업로드·다운로드하느라 패킷 수신이 늦어짐</li>
+              <li><strong>원인 2:</strong> LB는 서울 엣지에 붙었으나 백엔드 MIG가 미국 리전에 있어 대륙 간 RTT가 추가됨</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>지연 장애 시 가장 먼저 Cloud Logging에서 <code>httpRequest.latency</code>와 <code>jsonPayload.backend_target_latency</code> 두 숫자의 차이부터 확인하십시오.</div>
+        <div class="next-bridge">다음: 4.3 jsonPayload.statusDetails 5xx 코드별 플레이북 ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        네트워크 운영팀과 서비스 개발팀 사이의 불필요한 핑퐁을 단번에 끝내주는 실무 무기입니다. 이 두 필드의 차이만 대시보드에 띄워두어도 장애 원인 분석 시간이 수십 분에서 1분으로 줄어듭니다.
+      </div>
+    </section>
+
+    <!-- Slide 28: Session 4.3 statusDetails Playbook -->
+    <section class="slide" data-session="s4" data-title="4.3 jsonPayload.statusDetails 5xx 코드별 즉각 조치 플레이북">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s4">Session 4 · Day-2 트러블슈팅 및 IaC (3/5)</span>
+          <span class="slide-time">02:30 ~ 02:40 (5xx Failure Playbook)</span>
+        </div>
+        <h2 class="slide-title">4.3 502/503/504 에러 발생 시 추측을 끝내는 statusDetails 판독표</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> 같은 <code>502 Bad Gateway</code>라도 백엔드 앱이 죽은 건지, 방화벽이 막힌 건지, Keep-alive 타임아웃 충돌인지 어떻게 알 수 있을까요? LB 로그의 <code>jsonPayload.statusDetails</code>에 정확한 정답이 적혀 있습니다.
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 34%;"><code>jsonPayload.statusDetails</code> 값</th>
+              <th style="width: 10%;">HTTP 코드</th>
+              <th style="width: 28%;">정확한 발생 원인</th>
+              <th style="width: 28%;">즉각 조치 플레이북</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>response_sent_by_backend</code></td>
+              <td><strong>정상 / 5xx</strong></td>
+              <td>LB는 정상 전달했으며, <strong>백엔드 애플리케이션 코드 자체가 500/502를 생성해 반환함</strong></td>
+              <td>LB 이상 없음. 백엔드 애플리케이션 에러 로그(Stack Trace) 확인</td>
+            </tr>
+            <tr>
+              <td><code>backend_connection_closed_before_data_sent_to_client</code></td>
+              <td><strong>502</strong></td>
+              <td><strong>Keep-alive 타임아웃 불일치(Race Condition)</strong>로 백엔드가 먼저 TCP FIN/RST를 보냄</td>
+              <td>Session 3.9 공식 적용: 백엔드 웹서버 Keep-alive를 <strong>620초</strong>로 상향</td>
+            </tr>
+            <tr>
+              <td><code>failed_to_connect_to_backend</code></td>
+              <td><strong>502</strong></td>
+              <td>LB 프록시가 백엔드 VM과의 TCP 3-way Handshake(SYN) 자체에 실패함</td>
+              <td>방화벽에서 LB 대역(<code>35.191.0.0/16</code>, <code>130.211.0.0/22</code>, Proxy-only) 허용 여부 확인</td>
+            </tr>
+            <tr>
+              <td><code>failed_to_pick_backend</code></td>
+              <td><strong>502 / 503</strong></td>
+              <td>현재 트래픽을 받을 수 있는 Healthy 상태의 백엔드 VM이 단 1대도 없음(전멸)</td>
+              <td>LB Health Check 경로/포트 오타 또는 전체 백엔드 다운 여부 즉시 점검</td>
+            </tr>
+            <tr>
+              <td><code>backend_timeout</code></td>
+              <td><strong>504</strong></td>
+              <td>백엔드가 Backend Service의 <code>timeoutSec</code>(기본 30초) 안에 응답을 주지 못함</td>
+              <td>장시간 API인 경우 <code>timeoutSec</code>을 60~300초로 상향 및 슬로우 쿼리 튜닝</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-box">
+          <span class="code-title">Cloud Logging LQL · 백엔드 자체 에러를 제외하고 순수하게 LB 구간에서 발생한 5xx 에러만 필터링</span>
+          <pre><code>resource.type="http_load_balancer" AND httpRequest.status>=500 AND jsonPayload.statusDetails!="response_sent_by_backend"</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>위 Cloud Logging 쿼리 한 줄을 모니터링 알림에 등록해 두면 백엔드 앱 에러와 인프라 연결 에러를 즉시 분리할 수 있습니다.</div>
+        <div class="next-bridge">다음: 4.4 Serial Console 부팅 복구 및 Connectivity Tests ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        특히 `jsonPayload.statusDetails!="response_sent_by_backend"` 조건이 핵심입니다. 백엔드 개발자가 코드에서 500을 리턴한 것까지 인프라팀 LB 알람으로 울리지 않도록 이 필터를 꼭 공유해 주세요.
+      </div>
+    </section>
+
+    <!-- Slide 29: Session 4.4 Network & Boot Debugging -->
+    <section class="slide" data-session="s4" data-title="4.4 부팅 불능 복구(Serial Console) 및 네트워크 진단(Connectivity Tests)">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s4">Session 4 · Day-2 트러블슈팅 및 IaC (4/5)</span>
+          <span class="slide-time">02:40 ~ 02:50 (Boot &amp; Network Debugging)</span>
+        </div>
+        <h2 class="slide-title">4.4 SSH가 안 될 때의 Serial Console 복구와 Andromeda 경로 검증</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> <code>/etc/fstab</code> 오타나 방화벽 설정 실수로 VM에 SSH조차 붙지 않을 때, 그리고 Shared VPC·VPN·방화벽이 얽혀 어디서 패킷이 막히는지 모를 때 어떻게 진단할까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">1. 부팅 불능 및 SSH 먹통 진단: Serial Console</div>
+            <ul class="bullet-list">
+              <li><strong>Serial Port 1 (읽기 전용 로그):</strong> 에이전트 설치 없이도 커널 부팅 메시지, <code>cloud-init</code>, Startup Script 에러를 콘솔/CLI에서 즉시 조회합니다.</li>
+              <li><strong>Interactive Serial Console (Port 2):</strong> <code>serial-port-enable=TRUE</code>를 일시 활성화하면 네트워크 스택이 죽은 상태에서도 브라우저/CLI로 응급 복구 쉘에 직접 진입해 <code>fstab</code>을 고칠 수 있습니다.</li>
+              <li><strong>무거운 디스크 풀 스캔 복구:</strong> 부팅 디스크를 떼어내 정상 복구용 VM에 데이터 디스크로 마운트하여 수정 후 재부착합니다.</li>
+            </ul>
+          </div>
+
+          <div class="card card-highlight">
+            <div class="card-title">2. 네트워크 정적·동적 진단: Connectivity Tests &amp; Flow Logs</div>
+            <ul class="bullet-list">
+              <li><strong>VPC Flow Logs:</strong> Andromeda SDN 수준에서 수집하므로 게스트 성능 저하가 없으며, <code>reporter="SRC"</code>와 <code>"DEST"</code>를 대조해 비대칭 라우팅 드롭을 잡아냅니다.</li>
+              <li><strong>Network Intelligence Center (Connectivity Tests):</strong> 실제 패킷을 쏘지 않고도 Andromeda SDN의 제어 플레인 설정(방화벽, 라우트, Shared VPC, BGP, PSC)을 시뮬레이션하여 <strong>정확히 몇 번 방화벽 규칙이나 라우트에서 막혔는지 홉 단위로 지목</strong>합니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-box">
+          <span class="code-title">gcloud CLI · 부팅 로그 실시간 조회 및 온프레미스-내부 LB 구간 Connectivity Test 실행</span>
+          <pre><code># 1. SSH가 안 붙는 VM의 커널/부팅 콘솔 출력 마지막 100줄 즉시 확인
+gcloud compute instances get-serial-port-output prod-was-01 --zone=asia-northeast3-a --port=1 | tail -n 100
+
+# 2. 온프레미스 IP(192.168.10.5)에서 GCP 내부 LB(10.10.99.99:443)까지 막히는 구간 자동 분석
+gcloud network-management connectivity-tests create test-onprem-to-ilb   --source-ip-address=192.168.10.5 --destination-ip-address=10.10.99.99 --destination-port=443 --protocol=TCP</code></pre>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>복잡한 하이브리드 방화벽/라우팅 문의가 오면 `tcpdump`를 뜨기 전에 먼저 <code>Connectivity Tests</code>를 돌리면 30초 안에 차단 지점을 찾을 수 있습니다.</div>
+        <div class="next-bridge">다음: 4.5 Terraform 불변 템플릿 무중단 배포 패턴 &amp; Q&amp;A ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        Connectivity Tests는 단순 ping 테스트가 아니라 Andromeda SDN의 전체 라우팅/방화벽 그래프를 수학적으로 검증하는 정적 분석 엔진과 실측 프로빙을 겸비하고 있어 네트워크 운영팀의 만족도가 가장 높은 도구입니다.
+      </div>
+    </section>
+
+    <!-- Slide 30: Session 4.5 Terraform Pattern & Final Summary -->
+    <section class="slide" data-session="s4" data-title="4.5 Terraform 무중단 교체 패턴 및 3시간 전체 요약">
+      <div class="slide-top">
+        <div class="slide-meta-row">
+          <span class="slide-badge s4">Session 4 · Day-2 트러블슈팅 및 IaC (5/5 · Final Wrap-up)</span>
+          <span class="slide-time">02:50 ~ 03:00 (Terraform IaC &amp; Architecture Q&amp;A)</span>
+        </div>
+        <h2 class="slide-title">4.5 Terraform을 활용한 불변 템플릿 무중단 교체 패턴 &amp; 종합 정리</h2>
+        <div class="storyline-banner">
+          <strong>맥락(Why):</strong> Instance Template은 수정이 불가능하여 변경 시 삭제 후 재생성됩니다. 그런데 이미 MIG가 구버전 템플릿을 물고 있으면 Terraform이 <code>resourceInUseByAnotherResource</code> 에러를 뱉으며 멈춥니다. 어떻게 해결할까요?
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card card-highlight">
+            <div class="card-title">Terraform MIG 무중단 배포 필수 공식</div>
+            <ul class="bullet-list">
+              <li><strong>1. 고정 <code>name</code> 대신 <code>name_prefix</code> 사용:</strong> 매 변경 시 고유한 타임스탬프/해시 접미사가 붙은 신규 템플릿이 생성되도록 합니다.</li>
+              <li><strong>2. <code>create_before_destroy = true</code> 선언:</strong> 신규 템플릿을 먼저 생성 → MIG의 <code>version</code> 블록이 신규 템플릿으로 롤링 업데이트 시작 → 참조가 해제된 구버전 템플릿을 마지막에 안전하게 삭제합니다.</li>
+              <li><strong>3. CLI vs Terraform 역할 분담:</strong> 일상적인 형상/인프라 변경은 100% Terraform으로 관리하고, 긴급 장애 시 콘솔/CLI로 우회 조치한 경우 당일 내 코드에 반영해 드리프트를 제거합니다.</li>
+            </ul>
+          </div>
+
+          <div class="code-box" style="margin: 0; display: flex; flex-direction: column; justify-content: center;">
+            <span class="code-title">Terraform HCL · 종속성 충돌 없는 무중단 롤링 업데이트 표준 코드</span>
+            <pre><code>resource "google_compute_instance_template" "was_tpl" {
+  name_prefix  = "prod-was-tpl-"   # 1. 고정 name 대신 prefix 사용!
+  machine_type = "c3-standard-4"
+  # ... (디스크, gVNIC, 이미지 설정) ...
+
+  lifecycle {
+    create_before_destroy = true   # 2. 새 템플릿 생성 및 MIG 교체 후 구버전 삭제!
+  }
+}
+
+resource "google_compute_region_instance_group_manager" "was_mig" {
+  name   = "prod-was-mig"
+  region = "asia-northeast3"
+  version {
+    instance_template = google_compute_instance_template.was_tpl.self_link_unique
+  }
+  update_policy {
+    type            = "PROACTIVE"
+    minimal_action  = "REPLACE"
+    max_surge_fixed = 3            # 3개 존 동시 병렬 Surge
+    max_unavailable_fixed = 0      # 용량 100% 유지
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 12px 18px; background: #eff6ff; border-color: #93c5fd;">
+          <div style="font-size: calc(15.5px * var(--font-scale)); font-weight: 700; color: #1e3a8a;">
+            3시간 핵심 요약: [Session 1] Titanium + gVNIC + Hyperdisk + Golden Image + Shared VPC/OS Login ──▶ [Session 2] Regional MIG + Surge(>=3) + Liveness/Readiness 분리 + Scale-in Control ──▶ [Session 3] GFE/Maglev/Envoy + DSR(proto 66) + Global Access + Keep-alive 620초 ──▶ [Session 4] Ops Agent + LB Latency/statusDetails 분석 + Terraform create_before_destroy
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <div class="takeaway-text"><span class="takeaway-label">실습 안내</span>상단 <code>문서 뷰</code>로 이동하시면 본 과정의 모든 상세 설정 코드와 별도 옵션인 <strong>Hands-on Lab(+60분)</strong> 가이드를 바로 실행해 보실 수 있습니다.</div>
+        <div class="next-bridge">수고하셨습니다 · Q&amp;A ▶</div>
+      </div>
+      <div class="speaker-notes">
+        <span class="speaker-notes-title">발표자 노트</span>
+        마무리 슬라이드입니다. 특히 Terraform에서 `instance_template` 참조 시 `.self_link` 대신 `.self_link_unique`를 써야 템플릿 속성 변경을 Terraform이 정확히 감지하여 롤링 업데이트를 트리거한다는 실전 팁으로 강의를 마무리하면 완벽합니다.
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const totalSlides = slides.length;
+    let currentIndex = 0;
+    let fontScale = 1.0;
+
+    const counterEl = document.getElementById('slideCounter');
+    const progressEl = document.getElementById('progressFill');
+    const overviewModal = document.getElementById('overviewModal');
+    const overviewGrid = document.getElementById('overviewGrid');
+    const sessionTabs = Array.from(document.querySelectorAll('.session-tab'));
+
+    function buildOverview() {
+      overviewGrid.innerHTML = '';
+      slides.forEach((slide, idx) => {
+        const card = document.createElement('div');
+        card.className = 'overview-card' + (idx === currentIndex ? ' current' : '');
+        const badge = slide.querySelector('.slide-badge')?.textContent || '';
+        const title = slide.getAttribute('data-title') || slide.querySelector('.slide-title')?.textContent || '';
+        card.innerHTML = `
+          <div class="overview-num">Slide ${idx + 1} / ${totalSlides}</div>
+          <div class="overview-title">${title}</div>
+          <div class="overview-sub">${badge}</div>
+        `;
+        card.onclick = () => {
+          goToSlide(idx);
+          toggleOverview(false);
+        };
+        overviewGrid.appendChild(card);
+      });
+    }
+
+    function updateSessionTab(sessionKey) {
+      const map = { intro: 0, s1: 1, s2: 2, s3: 3, s4: 4 };
+      const activeTabIdx = map[sessionKey] ?? 0;
+      sessionTabs.forEach((btn, i) => {
+        btn.classList.toggle('active', i === activeTabIdx);
+      });
+    }
+
+    function goToSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= totalSlides) index = totalSlides - 1;
+      slides[currentIndex].classList.remove('active');
+      currentIndex = index;
+      slides[currentIndex].classList.add('active');
+      slides[currentIndex].scrollTop = 0;
+
+      counterEl.textContent = `${currentIndex + 1} / ${totalSlides}`;
+      progressEl.style.width = `${((currentIndex + 1) / totalSlides) * 100}%`;
+
+      const sessionKey = slides[currentIndex].getAttribute('data-session');
+      updateSessionTab(sessionKey);
+      window.location.hash = `slide-${currentIndex + 1}`;
+    }
+
+    function nextSlide() {
+      if (currentIndex < totalSlides - 1) goToSlide(currentIndex + 1);
+    }
+
+    function prevSlide() {
+      if (currentIndex > 0) goToSlide(currentIndex - 1);
+    }
+
+    function adjustFont(delta) {
+      fontScale = Math.min(1.3, Math.max(0.8, +(fontScale + delta).toFixed(2)));
+      document.documentElement.style.setProperty('--font-scale', fontScale);
+    }
+
+    function toggleNotes() {
+      document.body.classList.toggle('show-notes');
+      const btn = document.getElementById('btnNotes');
+      btn.classList.toggle('primary', document.body.classList.contains('show-notes'));
+    }
+
+    function toggleOverview(forceState) {
+      const next = typeof forceState === 'boolean' ? forceState : !overviewModal.classList.contains('open');
+      if (next) buildOverview();
+      overviewModal.classList.toggle('open', next);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        goToSlide(totalSlides - 1);
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        toggleNotes();
+      } else if (e.key === 'o' || e.key === 'O' || e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        toggleOverview();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 'Escape' && overviewModal.classList.contains('open')) {
+        toggleOverview(false);
+      }
+    });
+
+    // Init from URL hash
+    const match = window.location.hash.match(/^#slide-(\d+)$/);
+    if (match) {
+      const idx = parseInt(match[1], 10) - 1;
+      if (idx >= 0 && idx < totalSlides) currentIndex = idx;
+    }
+    goToSlide(currentIndex);
+  </script>
+</body>
+</html>
