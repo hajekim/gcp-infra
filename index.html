@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Compute Engine 아키텍처 심화 및 실전 구축·운영 핸즈온 포털</title>
+  <meta name="description" content="엔터프라이즈 인프라 운영팀 및 네트워크 운영팀을 위한 GCE, MIG, Cloud Load Balancing 심화 아키텍처 및 실전 핸즈온 포털" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #f4f6f9;
+      --bg-card: #ffffff;
+      --bg-surface: #f8fafc;
+      --bg-surface-alt: #f1f5f9;
+      --bg-code: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --accent-blue: #1a73e8;
+      --accent-blue-dark: #1558b0;
+      --accent-blue-soft: #e8f0fe;
+      --accent-green: #137333;
+      --accent-green-soft: #e6f4ea;
+      --accent-amber: #b06000;
+      --accent-amber-soft: #fef7e0;
+      --accent-red: #c5221f;
+      --accent-red-soft: #fce8e6;
+      --accent-purple: #681da8;
+      --accent-purple-soft: #f3e8fd;
+      --shadow-card: 0 4px 16px -4px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.03);
+      --font-sans: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 24px;
+    }
+
+    .nav-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-links a:hover {
+      background: var(--accent-blue-soft);
+      color: var(--accent-blue);
+    }
+
+    .nav-links a.btn-outline {
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* Hero Header */
+    .hero {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 36px 40px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .hero-eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-blue);
+      margin-bottom: 10px;
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+      line-height: 1.3;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 960px;
+      margin-bottom: 20px;
+    }
+
+    .hero-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--bg-surface-alt);
+      color: var(--text-secondary);
+    }
+
+    .pill-blue {
+      background: var(--accent-blue-soft);
+      color: var(--accent-blue);
+    }
+
+    .pill-green {
+      background: var(--accent-green-soft);
+      color: var(--accent-green);
+    }
+
+    /* Section Block */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 36px 40px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-card);
+      scroll-margin-top: 72px;
+    }
+
+    .section-header {
+      border-bottom: 2px solid var(--text-primary);
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 21px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-session {
+      background: var(--accent-blue);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .badge-lab {
+      background: var(--accent-green);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 26px 0 12px;
+      color: var(--text-primary);
+    }
+
+    h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 18px 0 8px;
+      color: var(--text-primary);
+    }
+
+    p {
+      font-size: 14.5px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 16px 0 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.8px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--border-subtle);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--bg-surface-alt);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin: 16px 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin: 16px 0;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .bullet-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 14px;
+      margin-bottom: 7px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    /* Callouts */
+    .callout {
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    .callout-info {
+      background: var(--accent-blue-soft);
+      border-left: 4px solid var(--accent-blue);
+      color: #174ea6;
+    }
+
+    .callout-warn {
+      background: var(--accent-amber-soft);
+      border-left: 4px solid var(--accent-amber);
+      color: #7c4a03;
+    }
+
+    .callout-danger {
+      background: var(--accent-red-soft);
+      border-left: 4px solid var(--accent-red);
+      color: #8c1d18;
+    }
+
+    /* Code Blocks */
+    code {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: var(--bg-surface-alt);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #b91c1c;
+    }
+
+    .code-box {
+      position: relative;
+      background: var(--bg-code);
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 12px 0 20px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .code-box pre {
+      margin: 0;
+      font-family: inherit;
+    }
+
+    .code-box code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .step-box {
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      background: #fff;
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .tag-cli {
+      background: var(--accent-purple-soft);
+      color: var(--accent-purple);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+    }
+
+    .tag-tf {
+      background: var(--accent-blue-soft);
+      color: var(--accent-blue);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 860px) {
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .section,
+      .hero {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <a href="#top" class="brand">
+        <span class="brand-dot"></span>
+        <span>Google Cloud Infrastructure Architecture &amp; Hands-on</span>
+      </a>
+      <div class="nav-links">
+        <a href="#agenda">아젠다</a>
+        <a href="#session1">Session 1: GCE</a>
+        <a href="#session2">Session 2: MIG</a>
+        <a href="#session3">Session 3: Load Balancing</a>
+        <a href="#session4">Session 4: Day-2 &amp; IaC</a>
+        <a href="#labs">Hands-on Lab</a>
+        <a href="proposal.html" class="btn-outline">일정 옵션별 제안서</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container" id="top">
+
+    <!-- Hero -->
+    <header class="hero">
+      <div class="hero-eyebrow">Google Cloud Technical Enablement · Level 300-400</div>
+      <h1 class="hero-title">Google Compute Engine 아키텍처 심화 및 구축·운영 가이드</h1>
+      <p class="hero-desc">
+        온프레미스 데이터센터와 멀티 클라우드 인프라를 운영하는 인프라 엔지니어 및 네트워크 엔지니어를 위한 기술 워크샵 포털입니다.
+        단순 콘솔 조작을 넘어 Andromeda SDN, GFE, Maglev, 분산 Envoy 프록시 기반의 내부 아키텍처와 무중단 배포, 502 에러 방지 튜닝 및 실전 트러블슈팅을 다룹니다.
+      </p>
+      <div class="hero-pills">
+        <span class="pill pill-blue">GCE Core &amp; Hyperdisk</span>
+        <span class="pill pill-blue">OS Login &amp; IAP Tunneling</span>
+        <span class="pill pill-blue">Regional &amp; Stateful MIG</span>
+        <span class="pill pill-blue">Maglev &amp; Envoy Load Balancing</span>
+        <span class="pill pill-green">Terraform + gcloud CLI Hands-on</span>
+      </div>
+    </header>
+
+    <!-- Main Agenda Table (From Screenshot) -->
+    <section class="section" id="agenda">
+      <div class="section-header">
+        <h2 class="section-title">워크샵 핵심 아젠다</h2>
+        <span style="font-size: 13px; color: var(--text-muted);">Architecture Deep Dive &amp; Production Operations</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 12%; text-align: center;">시간</th>
+              <th style="width: 24%; text-align: center;">세션명</th>
+              <th style="width: 64%; text-align: center;">상세 아젠다 및 내용</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: center; font-weight: 600;">Session 1</td>
+              <td><strong>GCE 코어 아키텍처 및<br>엔터프라이즈 구축 가이드</strong></td>
+              <td>
+                <ul class="bullet-list">
+                  <li><strong>Compute &amp; Machine Family:</strong> 워크로드 특성별 머신 시리즈(C3/C4, N2/N4 등) 선택 기준, gVNIC / Tier 1 고대역폭 네트워킹, 호스트 유지보수 이벤트(Live Migration vs Terminate) 동작 메커니즘</li>
+                  <li><strong>Storage &amp; Image 엔지니어링:</strong> Persistent Disk vs Hyperdisk 성능 특성(IOPS/Throughput 동적 프로비저닝), Golden Image 파이프라인(Packer/Cloud Build) vs Startup/Shutdown 스크립트 아키텍처</li>
+                  <li><strong>네트워크 &amp; 보안 베이스라인:</strong> Global VPC 라우팅 구조, Service Account 및 IAM Tags 기반 방화벽 정책 설계, Metadata Server 보안, OS Login + IAP(Identity-Aware Proxy) Tunneling 기반 엔터프라이즈 접근 통제</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: 600;">Session 2</td>
+              <td><strong>Instance Group (UMIG/MIG)<br>구조 및 라이프사이클 운영</strong></td>
+              <td>
+                <ul class="bullet-list">
+                  <li><strong>UMIG vs MIG 아키텍처:</strong> 비관리형(UMIG)과 관리형(MIG) 인스턴스 그룹 선택 기준, Regional MIG의 멀티존 분산 알고리즘(Target Distribution Shape: EVEN, BALANCED, ANY) 및 장애 격리</li>
+                  <li><strong>무중단 배포 및 업데이트 제어:</strong> Rolling Update(PROACTIVE vs OPPORTUNISTIC), Canary 배포(다중 템플릿 분할), maxSurge / maxUnavailable / minReadySec 설계 및 교체 방식(RECREATE vs SUBSTITUTE)</li>
+                  <li><strong>Autoscaling &amp; Autohealing 운영:</strong> 다중 지표 스케일링, Scale-in Control(급격한 축소 방지), Autohealing Health Check와 Load Balancer Health Check의 역할 분리, Graceful Shutdown 구성</li>
+                  <li><strong>Stateful MIG (상태 유지형 운영):</strong> 고정 IP(내/외부 IP 보존), 영구 디스크(PD), 인스턴스 메타데이터 보존이 필요한 상태 유지형 워크로드 운영 패턴</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: 600;">Session 3</td>
+              <td><strong>Cloud Load Balancing<br>아키텍처 및 트래픽 제어</strong></td>
+              <td>
+                <ul class="bullet-list">
+                  <li><strong>GCP Load Balancing 아키텍처:</strong> Google Front End(GFE) 및 소프트웨어 정의 네트워크(Andromeda) 기반 분산 아키텍처, Maglev(L4) 및 Envoy(L7) 엔진의 동작 원리와 즉시 확장(No Pre-warming) 특성</li>
+                  <li><strong>Proxy LB vs Passthrough LB:</strong> 프록시 기반 LB와 패스스루(DSR, Direct Server Return) 기반 LB의 패킷 흐름 차이 및 클라이언트 Source IP 보존 메커니즘</li>
+                  <li><strong>L7 ALB &amp; L4 NLB 구조 해부:</strong> Forwarding Rule &rarr; Target Proxy &rarr; URL Map &rarr; Backend Service &rarr; Instance Group/NEG 컴포넌트 상세 및 Internal LB 기반 멀티 티어 아키텍처</li>
+                  <li><strong>LB + MIG 연동 실전 운영:</strong> Balancing Mode(UTILIZATION vs RATE vs CONNECTION) 설계 시 주의사항, Session Affinity, Connection Draining 타임라인, LB-Backend 간 Keep-alive 타임아웃 튜닝(502 Bad Gateway 방지 공식)</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: 600;">Session 4</td>
+              <td><strong>Day-2 운영, 트러블슈팅<br>가이드 및 아키텍처 Q&amp;A</strong></td>
+              <td>
+                <ul class="bullet-list">
+                  <li><strong>Observability &amp; 병목 분석:</strong> Ops Agent 기반 메트릭/로그 수집, LB 로그(statusDetails, total_latencies vs backend_latencies) 분석을 통한 네트워크/백엔드 병목 구간 특정</li>
+                  <li><strong>네트워크/부팅 디버깅 및 IaC 가이드:</strong> Serial Console 분석, Network Intelligence Center(Connectivity Tests)를 통한 방화벽/라우팅 검증, Terraform으로 MIG/Instance Template 운영 시 무중단 교체(create_before_destroy) 필수 패턴</li>
+                  <li><strong>아키텍처 &amp; 운영 Q&amp;A:</strong> GCE 인프라 설계 및 실무 운영 관련 질의응답</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Session 1 -->
+    <section class="section" id="session1">
+      <div class="section-header">
+        <h2 class="section-title"><span class="badge-session">Session 1</span> GCE 코어 아키텍처 및 엔터프라이즈 구축 가이드</h2>
+      </div>
+
+      <h3>1. 워크로드 특성별 머신 시리즈 및 gVNIC 네트워킹</h3>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">머신 패밀리 및 Titanium 아키텍처</div>
+          <ul class="bullet-list">
+            <li><strong>N2 / N2D / N4:</strong> 표준 웹/WAS 및 마이크로서비스 워크로드용 범용 시리즈입니다. N4 시리즈는 Titanium 오프로딩 아키텍처와 Hyperdisk Balanced를 기본 탑재하여 가격 대비 균일한 성능을 제공합니다.</li>
+            <li><strong>C3 / C3D / C4:</strong> 저지연 트랜잭션, 암호화/패킷 처리, 고성능 연산 워크로드에 사용합니다. 네트워크 및 스토리지 I/O 가상화 처리를 전용 하드웨어인 Titanium IPU로 오프로딩하여 호스트 CPU 간섭을 제거합니다.</li>
+            <li><strong>Live Migration vs Terminate:</strong> 일반 GCE VM은 물리 호스트 점검 시 메모리와 TCP 세션을 유지한 채 다른 호스트로 이동하는 Live Migration을 기본 수행합니다. Local SSD 대량 장착이나 GPU 인스턴스처럼 `TERMINATE`가 적용되는 스펙은 메타데이터 서버의 `maintenance-event` 속성을 감시해 사전 드레이닝을 구성합니다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">gVNIC 드라이버 및 Persistent Disk vs Hyperdisk</div>
+          <ul class="bullet-list">
+            <li><strong>gVNIC 및 Tier 1 대역폭:</strong> 3세대 이후 머신(N4, C3, C4)은 `virtio-net` 대신 Google Virtual NIC(`gVNIC`) 사용이 필수입니다. Andromeda SDN과 직접 결합되어 인터럽트 오버헤드를 줄이고 Tier 1 활성화 시 최대 100~200Gbps 대역폭을 지원합니다.</li>
+            <li><strong>Hyperdisk 동적 프로비저닝:</strong> 디스크 용량에 따라 IOPS가 고정되던 기존 Persistent Disk와 달리, Hyperdisk는 용량과 성능(IOPS, Throughput)을 분리하여 운영 중에도 무중단으로 성능을 조정할 수 있습니다.</li>
+            <li><strong>Golden Image vs Startup Script:</strong> 오토스케일링 환경에서 부팅 시 패키지 설치를 수행하면 지연과 외부 의존성 장애가 발생합니다. Packer와 Cloud Build로 불변 이미지를 굽고, Startup Script는 환경변수 주입과 데몬 기동에만 사용합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>2. Global VPC와 엔터프라이즈 방화벽 및 접근 통제</h3>
+      <p>AWS의 VPC는 리전 단위이고 서브넷이 가용 영역(AZ)에 귀속되지만, GCP의 VPC는 글로벌 리소스이며 서브넷이 리전 리소스입니다. 단일 리전 서브넷 하나로 해당 리전 내 모든 존(a, b, c)의 VM이 별도 라우팅 설정 없이 통신합니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>Network Tags</th>
+              <th>Service Account 기반 방화벽</th>
+              <th>IAM Tags + Network Firewall Policy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>식별 메커니즘</strong></td>
+              <td>VM의 단순 텍스트 라벨 속성</td>
+              <td>VM에 부여된 IAM Service Account</td>
+              <td>Resource Manager 차원의 키-값 태그 바인딩</td>
+            </tr>
+            <tr>
+              <td><strong>보안 통제 수준</strong></td>
+              <td>낮음 (`setTags` 권한 보유 시 임의 변경 가능)</td>
+              <td>높음 (`iam.serviceAccounts.actAs` 권한 필요)</td>
+              <td>매우 높음 (태그 바인딩 IAM 권한을 중앙 보안팀이 독점 통제)</td>
+            </tr>
+            <tr>
+              <td><strong>운영 제약사항</strong></td>
+              <td>실시간 변경 가능</td>
+              <td>SA 변경 시 VM 중지 필요, VPC Peering 미지원</td>
+              <td>무중단 실시간 변경 가능, 조직/폴더 계층 정책 및 Peering 지원</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>무키(Keyless) 보안 접근 표준:</strong> 프로덕션 VM에는 공인 IP를 할당하지 않고 Bastion Host도 두지 않습니다. `35.235.240.0/20` 대역에서 TCP 22번 인바운드만 허용한 뒤, <strong>OS Login(`enable-oslogin=TRUE`) + IAP Tunneling</strong>을 통해 IAM 권한과 리눅스 계정을 실시간 연동하여 접속합니다.
+      </div>
+    </section>
+
+    <!-- Session 2 -->
+    <section class="section" id="session2">
+      <div class="section-header">
+        <h2 class="section-title"><span class="badge-session">Session 2</span> Instance Group 구조 및 라이프사이클 운영</h2>
+      </div>
+
+      <h3>1. Regional MIG 멀티존 분산 알고리즘과 무중단 배포</h3>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">Target Distribution Shape</div>
+          <ul class="bullet-list">
+            <li><code>EVEN</code>: 리전 내 선택된 모든 존에 인스턴스 대수를 엄격히 균등 유지합니다.</li>
+            <li><code>BALANCED</code>: 균등 배치를 우선하되 특정 존 용량 부족 시 가용한 타 존에 우선 생성하여 전체 목표 대수를 맞춥니다.</li>
+            <li><code>ANY</code>: 존 균등성보다 가용 용량 확보나 예약 리소스 소비를 최우선으로 합니다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Rolling &amp; Canary Update</div>
+          <ul class="bullet-list">
+            <li><code>PROACTIVE</code>: 템플릿 변경 즉시 롤링 교체를 실행합니다.</li>
+            <li><code>OPPORTUNISTIC</code>: 스케일아웃이나 장애 복구 시에만 새 템플릿을 점진 반영합니다.</li>
+            <li><strong>단일 MIG 카나리:</strong> 별도 MIG 생성 없이 `versions` 블록에 v1과 v2(예: 10% 또는 고정 1대)를 동시 선언해 실트래픽을 검증합니다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">무중단 교체 필수 파라미터</div>
+          <ul class="bullet-list">
+            <li><code>maxUnavailable = 0</code>: 새 VM이 완전히 준비되기 전까지 기존 VM 삭제를 금지합니다.</li>
+            <li><code>maxSurge >= 3</code>: Regional MIG(3개 존)에서 존별 동시 생성을 보장합니다.</li>
+            <li><code>minReadySec</code>: 헬스체크 통과 후 애플리케이션 워밍업 대기 시간을 확보합니다.</li>
+            <li><code>SUBSTITUTE</code>: 새 VM을 먼저 띄운 뒤 기존 VM을 제거합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>2. Autohealing Health Check와 Load Balancer Health Check의 분리 설계</h3>
+      <div class="callout callout-danger">
+        <strong>주의 (Cascading Failure 방지):</strong> Load Balancer 헬스체크와 MIG Autohealing 헬스체크에 동일한 엔드포인트를 사용하면 안 됩니다. 백엔드 DB 일시 지연 시 LB가 트래픽만 잠시 빼야 할 상황에서, Autohealer가 전체 WAS 인스턴스를 불량으로 판정해 동시에 강제 삭제 및 재부팅시키는 연쇄 장애가 발생합니다.
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>비교 항목</th>
+              <th>Load Balancer Health Check (Readiness)</th>
+              <th>Autohealing Health Check (Liveness)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>목적</strong></td>
+              <td>현재 인스턴스가 클라이언트 트래픽을 정상 처리할 수 있는지 확인</td>
+              <td>데몬 크래시나 OS 행(Hang)으로 인해 VM 자체를 재설치해야 하는지 확인</td>
+            </tr>
+            <tr>
+              <td><strong>실패 시 액션</strong></td>
+              <td>LB 라우팅 풀에서 즉시 제외 (VM은 유지되며 정상화 시 즉시 재투입)</td>
+              <td><strong>VM 강제 삭제 후 새 VM 프로비저닝</strong> (최소 수 분 소요)</td>
+            </tr>
+            <tr>
+              <td><strong>권장 설정값</strong></td>
+              <td><code>/healthz/ready</code> · 5초 주기, 2회 연속 실패 시 Unhealthy (10초)</td>
+              <td><code>/healthz/live</code> · 10~15초 주기, 3~5회 연속 실패 시 트리거 + <code>initialDelaySec</code> 충분히 확보</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>3. Stateful MIG 아키텍처와 설계상 한계점</h3>
+      <p>고정 내부/외부 IP, 영구 디스크(`autoDelete=false`), 인스턴스 이름과 고유 메타데이터를 보존해야 하는 레거시 솔루션이나 상태 유지형 노드에 사용합니다. 단, 프로덕션 도입 전 다음 3가지 제약사항을 반드시 검토해야 합니다:</p>
+      <ul class="bullet-list">
+        <li><strong>Autoscaling 동시 사용 불가:</strong> 각 인스턴스가 고유 식별자와 디스크 상태를 보유하므로 자동 수평 확장을 활성화할 수 없습니다.</li>
+        <li><strong>교차 존 자동 페일오버 미지원:</strong> Stateful MIG의 Autohealing은 <strong>동일한 존 내부에서만</strong> VM을 재생성하고 기존 Zonal 디스크를 재부착합니다. 존 전체 장애에 대비하려면 애플리케이션 레벨 복제를 구성해야 합니다.</li>
+        <li><strong>업데이트 시 `RECREATE` 강제:</strong> 동일한 이름과 IP, 디스크를 재사용해야 하므로 새 VM을 옆에 먼저 만드는 `SUBSTITUTE` 방식을 쓸 수 없고 기존 VM을 내렸다 올리는 `RECREATE`만 가능합니다.</li>
+      </ul>
+    </section>
+
+    <!-- Session 3 (Network Focus) -->
+    <section class="section" id="session3">
+      <div class="section-header">
+        <h2 class="section-title"><span class="badge-session">Session 3</span> Cloud Load Balancing 아키텍처 및 트래픽 제어</h2>
+      </div>
+
+      <h3>1. GFE, Andromeda SDN, Maglev 및 Envoy 아키텍처</h3>
+      <p>
+        타 클라우드의 로드 밸런서가 고객 VPC 서브넷 내부에 가상 어플라이언스(노드)를 프로비저닝하는 방식인 것과 달리, Google Cloud Load Balancing은 전 세계 80개 이상의 PoP에 상시 가동 중인 <strong>GFE(Google Front End), Maglev</strong> 및 호스트 하이퍼바이저에 내장된 <strong>Andromeda SDN</strong>에 라우팅 구성을 배포하는 아키텍처입니다. 따라서 트래픽 급증 시 별도의 사전 워밍(Pre-warming) 없이 즉각적인 트래픽 수용이 가능합니다.
+      </p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">L4 엔진: Maglev vs Andromeda 직접 라우팅</div>
+          <ul class="bullet-list">
+            <li><strong>External Passthrough NLB:</strong> Google의 분산 소프트웨어 L4 로드 밸런서인 <strong>Maglev</strong>가 일관된 해싱(Consistent Hashing)과 연결 추적을 통해 패킷을 백엔드 호스트로 분배합니다.</li>
+            <li><strong>Internal Passthrough NLB:</strong> 별도의 프록시나 중간 LB 장비 홉을 거치지 않습니다. Andromeda SDN 컨트롤 플레인이 가상 스위치(`vswitch`)에 직접 경로를 프로그래밍하여 소스 VM 호스트에서 타겟 백엔드 VM 호스트로 패킷이 직접 전달됩니다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">L7 엔진: Classic GFE vs 차세대 Envoy 프록시</div>
+          <ul class="bullet-list">
+            <li><strong>Classic ALB (<code>EXTERNAL</code>):</strong> 기존 GFE 독자 스택에서 동작합니다.</li>
+            <li><strong>Global / Regional / Internal ALB (<code>EXTERNAL_MANAGED</code>, <code>INTERNAL_MANAGED</code>):</strong> 오픈소스 <strong>Envoy 프록시</strong> 데이터 플레인 위에서 동작하며 가중치 기반 카나리 스플리팅, 정규표현식 라우팅, 양방향 mTLS, Service Extensions를 지원합니다.</li>
+            <li><strong>Proxy-only Subnet:</strong> 리전/내부 Envoy 프록시들이 고객 VPC의 백엔드 VM으로 연결을 맺을 때 출발지(SNAT) 주소로 사용하는 전용 서브넷 대역입니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>2. Proxy LB vs Passthrough LB 패킷 흐름 및 DSR(Direct Server Return)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>비교 항목</th>
+              <th>Proxy Load Balancer (L7 ALB, L4 Proxy NLB)</th>
+              <th>Passthrough Load Balancer (External/Internal Passthrough NLB)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>TCP/TLS 세션 종료</strong></td>
+              <td>LB(GFE/Envoy)에서 클라이언트 연결을 종료하고 백엔드와 새 TCP 세션을 수립</td>
+              <td>LB는 세션을 종료하지 않고 원본 패킷을 백엔드 VM으로 그대로 전달</td>
+            </tr>
+            <tr>
+              <td><strong>백엔드가 보는 Source IP</strong></td>
+              <td>LB 프록시 대역 (`35.191.0.0/16`, `130.211.0.0/22` 또는 Proxy-only Subnet)</td>
+              <td><strong>클라이언트의 실제 원본 Source IP 보존</strong></td>
+            </tr>
+            <tr>
+              <td><strong>백엔드가 보는 Destination IP</strong></td>
+              <td>백엔드 VM 자신의 Private NIC IP</td>
+              <td><strong>Load Balancer(Forwarding Rule)의 VIP</strong></td>
+            </tr>
+            <tr>
+              <td><strong>응답 패킷 경로</strong></td>
+              <td>백엔드 VM &rarr; LB 프록시 &rarr; 클라이언트</td>
+              <td><strong>Direct Server Return (DSR):</strong> 백엔드 VM이 클라이언트에게 직접 응답 전송</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>네트워크 엔지니어링 팁 (Passthrough LB에서 백엔드 VM이 LB VIP 패킷을 수신하는 원리):</strong><br>
+        패스스루 LB는 패킷의 목적지 IP를 백엔드 VM의 IP로 바꾸지(DNAT) 않고 LB VIP 그대로 전달합니다. 이때 백엔드 VM 내부의 <code>google-guest-agent</code> 데몬이 리눅스 커널의 <code>local</code> 라우팅 테이블(<code>ip route show table local proto 66</code>)에 LB VIP를 자동 등록하기 때문에 커널이 패킷을 드롭하지 않고 로컬 소켓으로 수신하며, 응답 시에도 출발지 IP를 LB VIP로 달아 DSR을 수행합니다.
+      </div>
+
+      <h3>3. 하이브리드 네트워크 연동 및 Cloud NAT 포트 고갈 방지</h3>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">온프레미스/타 클라우드 연동 및 NVA 아키텍처</div>
+          <ul class="bullet-list">
+            <li><strong>Internal LB Global Access:</strong> Dedicated Interconnect나 HA VPN 너머의 온프레미스 서버에서 GCP 내부의 Internal ALB/NLB VIP를 호출하려면 Forwarding Rule에 <code>--allow-global-access</code> 활성화가 필수입니다.</li>
+            <li><strong>Internal NLB Next-hop 방화벽:</strong> 서드파티 보안 장비(NVA) MIG 앞에 Internal Passthrough NLB를 배치하고 VPC 라우팅 테이블의 Next-hop(<code>--next-hop-ilb</code>)으로 지정하면 BGP 수렴 지연 없는 고가용성 인라인 보안 계층을 구성할 수 있습니다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Cloud NAT 동적 포트 할당 튜닝</div>
+          <ul class="bullet-list">
+            <li>Private VM이 외부 특정 목적지 IP:Port(예: 외부 결제/오픈뱅킹 API)로 대량의 동시 연결을 맺을 때 기본 정적 포트(64개) 설정은 즉시 포트 고갈(<code>OUT_OF_RESOURCES</code>)을 유발합니다.</li>
+            <li>반드시 <strong>Dynamic Port Allocation</strong>을 활성화(<code>minPortsPerVm=256~1024</code>, <code>maxPortsPerVm=65536</code>)하고, <code>enable_endpoint_independent_mapping = false</code> 상태를 유지하며, 필요시 복수의 공인 NAT IP를 할당해야 합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>4. Balancing Mode 설계와 Keep-alive 502 Bad Gateway 방지 공식</h3>
+      <p>
+        L7 Application Load Balancer와 MIG를 연동할 때는 CPU 사용률만 보고 판단하는 <code>UTILIZATION</code>보다 인스턴스당 초당 요청 수를 제한하는 <strong><code>RATE</code> 모드</strong>가 예측 가능성이 높습니다. 또한 가장 빈번한 프로덕션 장애 중 하나인 간헐적 502 에러를 막기 위해 아래 타임아웃 규칙을 반드시 준수해야 합니다.
+      </p>
+
+      <div class="code-box">
+        <pre><code>[L7 Application Load Balancer]                         [Backend VM (Nginx / Tomcat / Node.js)]
+  고정 Keep-Alive Idle Timeout = 600초                    기본 Keep-Alive Timeout = 5~65초 (미스매치!)
+              |                                                          |
+              | ---- (백엔드가 유휴 연결 종료를 위해 TCP FIN 전송) <---- |
+              | ----> (동시 타이밍에 LB가 재사용 소켓으로 HTTP POST 전송) |
+              | <---- (백엔드가 이미 닫힌 소켓이므로 TCP RST 응답) ------ |
+              x
+   502 Bad Gateway 발생!
+   Cloud Logging statusDetails: "backend_connection_closed_before_data_sent_to_client"
+
+[해결 공식]
+Backend Keep-Alive Timeout (권장 620초) > Load Balancer Keep-Alive Timeout (600초 고정)</code></pre>
+      </div>
+    </section>
+
+    <!-- Session 4 -->
+    <section class="section" id="session4">
+      <div class="section-header">
+        <h2 class="section-title"><span class="badge-session">Session 4</span> Day-2 운영, 트러블슈팅 가이드 및 아키텍처 Q&amp;A</h2>
+      </div>
+
+      <h3>1. Load Balancer 로그 기반 구간별 병목 특정 및 <code>statusDetails</code> 해부</h3>
+      <p>지연 시간이나 5xx 에러 발생 시 네트워크 구간 문제인지 백엔드 애플리케이션 문제인지 즉시 구분하는 핵심 필드입니다:</p>
+      <ul class="bullet-list">
+        <li><code>httpRequest.latency</code> (<code>total_latencies</code>): 클라이언트 요청 첫 바이트가 LB에 도달한 시점부터 응답 마지막 바이트를 클라이언트에 전송 완료할 때까지의 전체 시간입니다.</li>
+        <li><code>jsonPayload.backend_target_latency</code> (<code>backend_latencies</code>): LB 프록시가 백엔드 VM에 요청을 전달하고 응답을 수신하기까지 걸린 순수 백엔드 처리 시간입니다.</li>
+      </ul>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><code>jsonPayload.statusDetails</code> 값</th>
+              <th>HTTP 상태</th>
+              <th>정확한 원인 및 해결 방안</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>response_sent_by_backend</code></td>
+              <td>2xx ~ 5xx</td>
+              <td>LB 구간 이상 없음. 백엔드 애플리케이션이 직접 반환한 응답 코드입니다.</td>
+            </tr>
+            <tr>
+              <td><code>backend_connection_closed_before_data_sent_to_client</code></td>
+              <td>502</td>
+              <td><strong>Keep-alive 타임아웃 미스매치</strong>. 백엔드가 유휴 TCP 연결을 먼저 끊음 &rarr; 백엔드 Keep-alive를 <strong>620초</strong>로 설정합니다.</td>
+            </tr>
+            <tr>
+              <td><code>failed_to_connect_to_backend</code></td>
+              <td>502</td>
+              <td>LB가 백엔드 VM과 TCP 연결 수립 실패. 방화벽(`35.191.0.0/16`, `130.211.0.0/22`, Proxy-only Subnet) 차단 또는 백엔드 프로세스 다운을 확인합니다.</td>
+            </tr>
+            <tr>
+              <td><code>backend_timeout</code></td>
+              <td>504</td>
+              <td>백엔드 연결은 성공했으나 Backend Service의 <code>timeoutSec</code>(기본 30초) 내에 응답하지 못함 &rarr; 백엔드 슬로우 쿼리 점검 또는 타임아웃 상향.</td>
+            </tr>
+            <tr>
+              <td><code>failed_to_pick_backend</code></td>
+              <td>502 / 503</td>
+              <td>가용한 Healthy 백엔드가 0대임 &rarr; Health Check 경로/포트 및 방화벽 규칙을 즉시 점검합니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2. Terraform 운영 시 Instance Template 무중단 교체 패턴</h3>
+      <p>
+        Instance Template은 불변 리소스이므로 수정 시 삭제 후 재생성이 필요합니다. 하지만 이미 MIG에 연결된 템플릿을 먼저 삭제하려고 하면 <code>resourceInUseByAnotherResource</code> 오류가 발생합니다. 따라서 반드시 <code>name_prefix</code>와 <code>create_before_destroy = true</code>를 함께 선언해야 합니다.
+      </p>
+      <div class="code-box">
+        <button class="copy-btn" onclick="copyCode(this)">복사</button>
+        <pre><code>resource "google_compute_instance_template" "app_v1" {
+  name_prefix  = "gce-ws-tpl-"
+  machine_type = "e2-standard-2"
+
+  # ... (디스크, 네트워크, 메타데이터 설정) ...
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- Hands-on Lab Section -->
+    <section class="section" id="labs">
+      <div class="section-header">
+        <h2 class="section-title"><span class="badge-lab">Hands-on Lab</span> 실전 구축, 무중단 배포 및 502 장애 디버깅 실습</h2>
+        <span style="font-size: 13px; color: var(--text-muted);">Terraform (프로비저닝/IaC) + gcloud CLI (운영/트러블슈팅) 역할 분담</span>
+      </div>
+
+      <div class="callout callout-warn">
+        <strong>실습 설계 원칙:</strong> 제한된 실습 시간 동안 리소스 생성 대기로 시간을 소모하지 않도록, <strong>Step 1에서는 Terraform으로 전체 베이스라인 인프라를 일괄 구축</strong>하고, <strong>Step 2~4에서는 보안 접속 검증, 무중단 롤링 업데이트, Keep-alive 502 장애 재현 및 로그 분석</strong>에 집중합니다.
+      </div>
+
+      <!-- Step 1 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-title">Step 1. 레포지토리 클론 및 베이스라인 인프라 일괄 프로비저닝</span>
+          <span class="tag-tf">Terraform</span>
+        </div>
+        <p>Cloud Shell 또는 로컬 터미널에서 실습 레포지토리를 클론하고, VPC, 동적 포트 할당이 적용된 Cloud NAT, Private Regional MIG, Envoy 기반 Global External ALB를 한 번에 생성합니다.</p>
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">복사</button>
+          <pre><code>git clone https://github.com/hajekim/gcp-infra.git
+cd gcp-infra/terraform
+
+export PROJECT_ID=$(gcloud config get-value project)
+export REGION="asia-northeast3"
+
+gcloud services enable compute.googleapis.com iap.googleapis.com networkmanagement.googleapis.com logging.googleapis.com --project=$PROJECT_ID
+
+terraform init
+terraform apply -var="project_id=${PROJECT_ID}" -var="region=${REGION}" -auto-approve
+
+export ALB_VIP=$(terraform output -raw alb_vip)
+echo "ALB VIP: http://${ALB_VIP}/"</code></pre>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-title">Step 2. Private VM IAP 터널링 접속 및 Connectivity Tests 검증</span>
+          <span class="tag-cli">gcloud CLI</span>
+        </div>
+        <p>생성된 MIG 인스턴스는 공인 IP가 전혀 없습니다. IAP TCP Forwarding을 통해 SSH 접속이 이루어지는지 확인하고, Network Intelligence Center의 Connectivity Tests로 Google Health Check 대역에서 백엔드 VM 8080 포트로의 방화벽 및 라우팅 정합성을 검증합니다.</p>
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">복사</button>
+          <pre><code># 1. MIG 내 첫 번째 인스턴스 이름 및 존 확인
+VM_INFO=$(gcloud compute instance-groups managed list-instances gce-ws-rmig \
+  --region=$REGION --format="value(instance.basename(),instance.scope().segment(0))" | head -n 1)
+VM_NAME=$(echo $VM_INFO | awk '{print $1}')
+VM_ZONE=$(echo $VM_INFO | awk '{print $2}')
+
+# 2. 공인 IP 없이 IAP Tunneling으로 내부 상태 및 Keep-Alive 설정 확인
+gcloud compute ssh "$VM_NAME" --zone="$VM_ZONE" --tunnel-through-iap \
+  --command="systemctl status workshop-app --no-pager && curl -s localhost:8080 | jq ."
+
+# 3. Connectivity Test 생성 및 실행 (Health Check Prober -> Private VM:8080)
+gcloud network-management connectivity-tests create hc-to-vm-test \
+  --source-ip-address=35.191.0.1 \
+  --destination-instance="projects/${PROJECT_ID}/zones/${VM_ZONE}/instances/${VM_NAME}" \
+  --destination-port=8080 \
+  --protocol=TCP
+
+gcloud network-management connectivity-tests describe hc-to-vm-test \
+  --format="yaml(reachabilityDetails)"</code></pre>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-title">Step 3. 무중단 카나리/롤링 업데이트 및 Autohealing 복구 관찰</span>
+          <span class="tag-tf">Terraform + gcloud CLI</span>
+        </div>
+        <p>터미널 창 하나에서 실시간 모니터링 스크립트를 실행해 둔 상태로, <code>app_version="v2"</code>를 적용하여 <code>create_before_destroy</code>와 <code>maxUnavailable=0</code> 기반의 무중단 교체가 일어나는 과정을 확인합니다.</p>
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">복사</button>
+          <pre><code># [터미널 1] 실시간 응답 및 버전 모니터링 실행
+../scripts/watch_rollout.sh "$ALB_VIP"
+
+# [터미널 2] v2 템플릿 무중단 롤링 업데이트 실행 (create_before_destroy 동작 확인)
+terraform apply -var="project_id=${PROJECT_ID}" -var="app_version=v2" -auto-approve
+
+# 롤링 업데이트 진행 상태 실시간 조회
+gcloud compute instance-groups managed list-instances gce-ws-rmig --region=$REGION
+
+# [선택] Readiness와 Liveness 분리 확인: 특정 VM만 LB 트래픽에서 즉시 제외(/tmp/unready 생성)
+gcloud compute ssh "$VM_NAME" --zone="$VM_ZONE" --tunnel-through-iap \
+  --command="touch /tmp/unready"
+# -> VM은 삭제되지 않고 유지되면서 LB 백엔드에서만 제외됨을 확인 후 복구:
+gcloud compute ssh "$VM_NAME" --zone="$VM_ZONE" --tunnel-through-iap \
+  --command="rm -f /tmp/unready"</code></pre>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-title">Step 4. Keep-Alive 타임아웃 미스매치(502 Bad Gateway) 장애 주입 및 디버깅</span>
+          <span class="tag-cli">Troubleshooting</span>
+        </div>
+        <p>백엔드 Keep-Alive 타임아웃을 의도적으로 <code>2초</code>로 낮추어 LB(600초)와의 Race Condition을 유발하고, Cloud Logging에서 <code>backend_connection_closed_before_data_sent_to_client</code> 시그니처를 확인한 뒤 <code>620초</code>로 복구합니다.</p>
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">복사</button>
+          <pre><code># 1. 백엔드 Keep-Alive 타임아웃을 2초로 단축하여 취약한 템플릿 배포
+terraform apply -var="project_id=${PROJECT_ID}" -var="app_version=v2-buggy" -var="keepalive_timeout_sec=2" -auto-approve
+
+# 2. 롤링 업데이트 완료 대기
+gcloud compute instance-groups managed wait-until --stable gce-ws-rmig --region=$REGION
+
+# 3. 2초 유휴 경계 타이밍에 POST 요청을 보내 502 Bad Gateway 재현
+python3 ../scripts/trigger_502_race.py "$ALB_VIP" 1.98
+
+# 4. Cloud Logging에서 502 에러의 정확한 원인(statusDetails) 및 지연 시간 쿼리
+gcloud logging read \
+  'resource.type="http_load_balancer" AND httpRequest.status>=500' \
+  --limit=5 \
+  --format="table(timestamp, httpRequest.status, jsonPayload.statusDetails, httpRequest.latency, jsonPayload.backend_target_latency)"
+
+# 5. 황금 공식(Keep-Alive 620초 > LB 600초)으로 복구 후 502 소멸 검증
+terraform apply -var="project_id=${PROJECT_ID}" -var="app_version=v2-fixed" -var="keepalive_timeout_sec=620" -auto-approve</code></pre>
+        </div>
+      </div>
+
+      <!-- Step 5 Cleanup -->
+      <div class="step-box" style="margin-bottom: 0;">
+        <div class="step-header">
+          <span class="step-title">Step 5. 실습 리소스 정리</span>
+          <span class="tag-tf">Cleanup</span>
+        </div>
+        <div class="code-box" style="margin-bottom: 0;">
+          <button class="copy-btn" onclick="copyCode(this)">복사</button>
+          <pre><code>gcloud network-management connectivity-tests delete hc-to-vm-test -q || true
+terraform destroy -var="project_id=${PROJECT_ID}" -auto-approve</code></pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function copyCode(btn) {
+      const codeEl = btn.parentElement.querySelector('code');
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = '복사됨';
+        setTimeout(() => { btn.innerText = orig; }, 1500);
+      });
+    }
+  </script>
+</body>
+
+</html>
