@@ -16,7 +16,7 @@
 ## 디렉토리 구조
 
 - `index.html`: 아키텍처 심화 가이드 및 인터랙티브 핸즈온 실습 포털 (`https://gcp.geap.dev`)
-- `slides.html`: 3시간(4개 세션) 강의용 웹 기반 프레젠테이션 슬라이드 데크 (30장, 발표자 노트 및 폰트 확대/축소 지원, `https://gcp.geap.dev/slides.html`)
+- `slides.html`: 3시간(4개 세션) 강의용 웹 기반 프레젠테이션 슬라이드 데크 (98장, 발표자 노트 및 폰트 확대/축소 지원, `https://gcp.geap.dev/slides.html`)
 - `proposal.html`: 일정 옵션별 상세 교육 아젠다 (`https://gcp.geap.dev/proposal.html`)
 - `terraform/`: 베이스라인 인프라(VPC, Cloud NAT, Private MIG, L7 ALB) 즉시 프로비저닝 및 무중단 템플릿 교체 검증용 Terraform 코드
 - `scripts/`: 502 Bad Gateway 장애 주입 및 무중단 롤링 업데이트 실시간 모니터링 스크립트
