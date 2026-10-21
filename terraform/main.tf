@@ -150,7 +150,8 @@ resource "google_compute_instance_template" "app_v1" {
     source_image = "projects/debian-cloud/global/images/family/debian-12"
     auto_delete  = true
     boot         = true
-    disk_type    = "pd-balanced"
+    # 참고: N4, C4, C4A, C4D 등 4세대 머신 사용 시 반드시 "hyperdisk-balanced"로 지정해야 합니다.
+    disk_type    = var.disk_type
     disk_size_gb = 30
   }
 
@@ -166,9 +167,10 @@ resource "google_compute_instance_template" "app_v1" {
   }
 
   metadata = {
-    enable-oslogin     = "TRUE"
-    enable-serial-port = "TRUE"
-    app_version        = var.app_version
+    enable-oslogin             = "TRUE"
+    serial-port-logging-enable = "TRUE"
+    serial-port-enable         = "FALSE"
+    app_version                = var.app_version
     keepalive_sec      = tostring(var.keepalive_timeout_sec)
     startup-script     = <<-EOF
       #!/bin/bash
@@ -272,7 +274,7 @@ resource "google_compute_region_instance_group_manager" "app_mig" {
 
   version {
     name              = "primary"
-    instance_template = google_compute_instance_template.app_v1.id
+    instance_template = google_compute_instance_template.app_v1.self_link_unique
   }
 
   named_port {

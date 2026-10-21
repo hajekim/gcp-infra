@@ -758,16 +758,23 @@
             <tr>
               <td><strong>N4</strong></td>
               <td>Intel Emerald Rapids + <strong>Titanium 오프로딩</strong></td>
-              <td><strong>Hyperdisk 전용</strong> (Hyperdisk Balanced 기본)</td>
+              <td><strong>Hyperdisk 전용</strong> (레거시 <code>pd-*</code> 마운트 불가)</td>
               <td><strong>gVNIC 필수</strong> / 최대 50Gbps</td>
               <td>높은 가격 대비 성능과 균일한 I/O 응답 시간이 요구되는 차세대 표준 API 서버</td>
             </tr>
             <tr>
-              <td><strong>C3 / C3D / C4</strong></td>
-              <td>Intel Sapphire/Emerald Rapids, AMD Genoa + <strong>Titanium IPU</strong></td>
-              <td><strong>Hyperdisk 중심</strong> (Local SSD 옵션 제공)</td>
+              <td><strong>C3 / C3D</strong></td>
+              <td>Intel Sapphire Rapids / AMD Genoa + <strong>Titanium IPU</strong></td>
+              <td>Persistent Disk 및 Hyperdisk 모두 지원 (Local SSD 옵션)</td>
               <td><strong>gVNIC 필수</strong> / Tier 1 시 최대 200Gbps</td>
-              <td>초저지연 코어 트랜잭션, 암호화/패킷 처리, 고성능 API 게이트웨이 및 DB 엔진</td>
+              <td>고성능 API 게이트웨이, 인메모리 캐시(Redis), 고성능 데이터베이스</td>
+            </tr>
+            <tr>
+              <td><strong>C4 / C4D / C4A</strong></td>
+              <td>Intel Granite/Emerald Rapids (C4), AMD Turin 5세대 (C4D), Google Axion ARM (C4A) + <strong>차세대 Titanium IPU</strong></td>
+              <td><strong>Hyperdisk 전용</strong> (레거시 <code>pd-*</code> 마운트 불가, Local SSD 옵션 별도)</td>
+              <td><strong>gVNIC 필수</strong> / Tier 1 시 최대 200Gbps</td>
+              <td>초저지연 코어 트랜잭션(C4/C4D), 고효율 클라우드 네이티브 마이크로서비스(C4A Axion)</td>
             </tr>
           </tbody>
         </table>
@@ -835,12 +842,12 @@ fi</code></pre>
             <tr>
               <td><strong>운영 중 성능 변경</strong></td>
               <td>성능을 높이려면 디스크 크기를 영구 증설해야 함 (축소 불가)</td>
-              <td>VM 무중단 상태에서 API / CLI / Terraform으로 <strong>IOPS 및 처리량 수치를 동적으로 상향 및 하향 조정 가능</strong></td>
+              <td>VM 무중단 상태에서 API / CLI / Terraform으로 <strong>IOPS 및 처리량 수치를 동적으로 상향 및 하향 조정 가능</strong> (단, 4시간당 1회 쿨다운 적용)</td>
             </tr>
             <tr>
-              <td><strong>스토리지 풀 공유</strong></td>
-              <td>개별 디스크 단위로만 프로비저닝</td>
-              <td><strong>Hyperdisk Storage Pools</strong>를 통해 여러 VM이 사전 확보된 용량과 IOPS 풀을 씬 프로비저닝으로 공유 가능</td>
+              <td><strong>고가용성 복제 및 스토리지 풀</strong></td>
+              <td>Regional PD (2개 존 동기 복제), 개별 디스크 단위 프로비저닝</td>
+              <td><strong>Hyperdisk Balanced High Availability</strong> (<code>hyperdisk-balanced-high-availability</code>, 2개 존 동기 복제) 및 <strong>Hyperdisk Storage Pools</strong> 씬 프로비저닝 공유 지원</td>
             </tr>
           </tbody>
         </table>
@@ -1211,7 +1218,7 @@ gcloud compute instance-groups managed rolling-action start-update prod-was-rmig
           <div class="card-title">도입 전 반드시 알아야 할 3대 구조적 제약사항</div>
           <ul class="bullet-list">
             <li><strong>1. Autoscaling 동시 사용 불가:</strong> 각 인스턴스가 고유한 상태와 디스크를 가지므로 자동 수평 확장(Autoscaling)을 활성화할 수 없습니다.</li>
-            <li><strong>2. 교차 존(Cross-Zone) 자동 페일오버 미지원:</strong> Stateful MIG의 Autohealing은 <strong>장애가 발생한 바로 그 존(Zone) 내부에서만</strong> VM을 재생성하고 Zonal 디스크를 재부착합니다. 특정 존 전체 장애 시 타 존으로 자동 이동하지 않습니다.</li>
+            <li><strong>2. 교차 존(Cross-Zone) 자동 페일오버 미지원:</strong> Stateful MIG의 Autohealing은 <strong>장애가 발생한 바로 그 존(Zone) 내부에서만</strong> VM을 재생성하고 Zonal 디스크를 재부착합니다. 특정 존 전체 장애 시 타 존으로 자동 이동하지 않으며, 존 간 스토리지 동기 복제가 필요한 경우 <code>hyperdisk-balanced-high-availability</code> 또는 Regional PD를 사용해야 합니다.</li>
             <li><strong>3. 롤링 업데이트 시 <code>RECREATE</code> 강제:</strong> 동일한 이름, IP, 디스크를 새 VM에 다시 물려야 하므로 기존 VM을 먼저 내렸다가 올리는 <code>RECREATE</code> 방식만 사용할 수 있습니다.</li>
           </ul>
         </div>
@@ -1273,7 +1280,7 @@ gcloud compute instance-groups managed rolling-action start-update prod-was-rmig
           <div class="card-title">L7 엔진 구분과 Proxy-only Subnet</div>
           <ul class="bullet-list">
             <li><strong>Classic ALB (<code>EXTERNAL</code>) vs Envoy 기반 ALB (<code>EXTERNAL_MANAGED</code>, <code>INTERNAL_MANAGED</code>):</strong> Classic ALB는 기존 GFE 단독 스택에서 동작하며, 신규 표준인 Global/Regional/Internal ALB는 <strong>오픈소스 Envoy 프록시</strong> 데이터 플레인 위에서 동작합니다. 가중치 기반 카나리 스플리팅, 정규표현식 라우팅, 헤더 조작, 양방향 mTLS, Service Extensions를 사용하려면 반드시 Envoy 기반 스킴(<code>EXTERNAL_MANAGED</code> / <code>INTERNAL_MANAGED</code>)을 선택해야 합니다.</li>
-            <li><strong>Proxy-only Subnet (<code>--purpose=REGIONAL_MANAGED_PROXY</code>)의 정체:</strong> Regional ALB나 Internal ALB를 생성할 때 VPC 내에 <code>/23</code> 이상의 Proxy-only Subnet 구성이 필수입니다. 이는 Google이 관리하는 Envoy 프록시 인스턴스들이 고객 VPC 내부의 백엔드 VM으로 새로운 TCP 연결을 맺을 때 <strong>출발지 IP(SNAT 주소)로 할당받아 사용하는 전용 주소 풀</strong>입니다.</li>
+            <li><strong>Proxy-only Subnet (<code>--purpose=REGIONAL_MANAGED_PROXY</code>)의 정체:</strong> Regional ALB나 Internal ALB를 생성할 때 VPC 내에 <code>/23</code> 이상의 Proxy-only Subnet 구성이 필수입니다. 이는 Google이 관리하는 Envoy 프록시 인스턴스들이 고객 VPC 내부의 백엔드 VM으로 새로운 TCP 연결을 맺을 때 <strong>출발지 IP(SNAT 주소)로 할당받아 사용하는 전용 주소 풀</strong>입니다. (주의: 과거 레거시 <code>--purpose=INTERNAL_HTTPS_LOAD_BALANCER</code> 플래그는 Deprecated되었으므로 반드시 <code>REGIONAL_MANAGED_PROXY</code>를 사용해야 하며, 엔터프라이즈 TLS 인증서 관리는 <strong>Certificate Manager</strong> <code>--certificate-map</code> 연동을 권장합니다.)</li>
           </ul>
         </div>
       </div>
@@ -1485,16 +1492,16 @@ server.headersTimeout = 625 * 1000;   // keepAliveTimeout보다 크게
 
       <h4>네트워크 병목 vs 백엔드 애플리케이션 병목 3초 판별법</h4>
       <p>
-        간헐적인 응답 지연이 발생했을 때 Cloud Load Balancing 로그의 두 가지 지연 시간 필드를 비교하면 원인이 네트워크/클라이언트 구간인지 백엔드 서버 구간인지 즉시 판별할 수 있습니다:
+        간헐적인 응답 지연이 발생했을 때 Cloud Monitoring의 두 가지 레이턴시 메트릭(<code>https/total_latencies</code> vs <code>https/backend_latencies</code>)과 Cloud Logging의 요청 로그(<code>httpRequest.latency</code>)를 대조하면 원인이 네트워크/클라이언트 구간인지 백엔드 서버 구간인지 즉시 판별할 수 있습니다:
       </p>
       <div class="grid-2">
         <div class="card">
-          <div class="card-title"><code>httpRequest.latency</code>: 전체 왕복 지연 시간</div>
-          <p>클라이언트가 보낸 요청의 첫 번째 바이트가 Google LB(GFE/Envoy)에 도착한 순간부터, LB가 클라이언트에게 응답의 마지막 바이트를 전송 완료할 때까지 걸린 <strong>전체 왕복 처리 시간(<code>total_latencies</code>)</strong>입니다.</p>
+          <div class="card-title"><code>httpRequest.latency</code> &amp; <code>https/total_latencies</code>: 전체 왕복 지연 시간</div>
+          <p>클라이언트가 보낸 요청의 첫 번째 바이트가 Google LB(GFE/Envoy)에 도착한 순간부터, LB가 클라이언트에게 응답의 마지막 바이트를 전송 완료할 때까지 걸린 <strong>전체 왕복 처리 시간</strong>입니다. (Cloud Logging 개별 로그의 <code>httpRequest.latency</code> 필드 및 Cloud Monitoring <code>https/total_latencies</code> 메트릭)</p>
         </div>
         <div class="card">
-          <div class="card-title"><code>jsonPayload.backend_target_latency</code>: 순수 백엔드 처리 시간</div>
-          <p>LB 프록시가 백엔드 MIG VM으로 요청을 전달하기 시작한 시점부터 백엔드 VM으로부터 응답을 모두 수신할 때까지 걸린 <strong>순수 백엔드 처리 시간(<code>backend_latencies</code>)</strong>입니다.</p>
+          <div class="card-title">Cloud Monitoring <code>https/backend_latencies</code>: 순수 백엔드 처리 시간</div>
+          <p>LB 프록시가 백엔드 MIG VM으로 요청을 전달하기 시작한 시점부터 백엔드 VM으로부터 응답을 모두 수신할 때까지 걸린 <strong>순수 백엔드 처리 시간</strong>입니다. (Internal ALB는 <code>https/internal/backend_latencies</code> 메트릭 확인)</p>
         </div>
       </div>
 
@@ -1553,7 +1560,7 @@ server.headersTimeout = 625 * 1000;   // keepAliveTimeout보다 크게
         <div class="card">
           <div class="card-title">Serial Console &amp; Connectivity Tests</div>
           <ul class="bullet-list">
-            <li><strong>Serial Console:</strong> 커널 패닉, <code>/etc/fstab</code> 오타, 방화벽 실수로 SSH 접속이 불가할 때 하이퍼바이저의 시리얼 포트(ttyS0) 부팅 로그를 실시간 스트리밍하거나 대화형 콘솔(<code>enable-serial-port=TRUE</code>)로 직접 진입해 복구합니다.</li>
+            <li><strong>Serial Console:</strong> 커널 패닉, <code>/etc/fstab</code> 오타, 방화벽 실수로 SSH 접속이 불가할 때 하이퍼바이저의 시리얼 포트 1(<code>serial-port-logging-enable=TRUE</code>) 부팅 로그를 실시간 스트리밍하거나 긴급 복구 시에만 대화형 콘솔(<code>serial-port-enable=TRUE</code>)로 직접 진입해 복구합니다.</li>
             <li><strong>Network Intelligence Center (Connectivity Tests):</strong> 실제 패킷을 발생시키지 않고도 Andromeda SDN의 제어 플레인 라우팅 테이블과 방화벽 정책을 정적 분석 및 라이브 프로빙하여, 어느 방화벽 규칙이나 라우트 홉에서 패킷이 드롭되는지 수 초 내에 찾아냅니다.</li>
           </ul>
         </div>

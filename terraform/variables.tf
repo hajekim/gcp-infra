@@ -22,9 +22,15 @@ variable "prefix" {
 }
 
 variable "machine_type" {
-  description = "GCE 머신 타입 (gVNIC 지원 시리즈)"
+  description = "GCE 머신 타입 (gVNIC 지원 시리즈: 실습용 e2-standard-2 또는 프로덕션 c3-standard-4 / n4-standard-2)"
   type        = string
   default     = "e2-standard-2"
+}
+
+variable "disk_type" {
+  description = "부팅 디스크 타입 (e2/n2는 pd-balanced, c3/c4/n4는 hyperdisk-balanced 필수)"
+  type        = string
+  default     = "pd-balanced"
 }
 
 variable "target_size" {

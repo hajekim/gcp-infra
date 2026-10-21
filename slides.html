@@ -745,7 +745,7 @@
 <table>
        <thead><tr><th>카테고리</th><th>대표 머신 시리즈</th><th>vCPU : Memory 비율</th><th>핵심 타겟 워크로드</th></tr></thead>
        <tbody>
-         <tr><td><strong>Compute-Optimized</strong></td><td><code>C3</code>, <code>C4</code>, <code>C3D</code>, <code>H3</code></td><td>1 : 2 또는 1 : 4 (고클럭 유지)</td><td>초저지연 API 게이트웨이, 대규모 트랜잭션 WAS, 고성능 게임/금융 엔진</td></tr>
+         <tr><td><strong>Compute-Optimized</strong></td><td><code>C3</code>, <code>C4</code>, <code>C3D</code>, <code>C4D</code>, <code>C4A</code></td><td>1 : 2 또는 1 : 4 (고클럭 유지)</td><td>초저지연 API 게이트웨이, 대규모 트랜잭션 WAS(C4/C4D), 고효율 ARM 마이크로서비스(C4A Axion)</td></tr>
          <tr><td><strong>General-Purpose (Performance)</strong></td><td><code>N4</code>, <code>N2</code>, <code>N2D</code></td><td>1 : 4 기본 (최대 1 : 8 확장)</td><td>엔터프라이즈 표준 웹/앱 서버, 마이크로서비스, 중규모 RDBMS/NoSQL</td></tr>
          <tr><td><strong>General-Purpose (Cost-Saving)</strong></td><td><code>E2</code></td><td>1 : 1 ~ 1 : 8 (동적 CPU 할당)</td><td>개발/검증(Dev/Staging) 환경, 백오피스, 트래픽 변화가 완만한 경량 서비스</td></tr>
          <tr><td><strong>Memory / Storage Optimized</strong></td><td><code>M3</code>, <code>X4</code> / <code>Z3</code></td><td>1 : 8 ~ 1 : 32+ 대용량 메모리</td><td>SAP HANA, 대규모 인메모리 캐시(Redis 클러스터), 고밀도 로컬 NVMe DB</td></tr>
@@ -779,8 +779,8 @@
 <table>
        <thead><tr><th>비교 항목</th><th>E2 (비용 최적화)</th><th>N2 / N2D (2세대 범용)</th><th>N4 / C3 / C4 (3·4세대 차세대 표준)</th></tr></thead>
        <tbody>
-         <tr><td><strong>CPU 플랫폼 할당</strong></td><td>가용 호스트 풀에서 동적 배정 (CPU 오버서브스크립션 일부 허용)</td><td>고정 프로세서(Ice Lake / Milan) 전용 코어 할당</td><td><strong>전용 최신 코어(Emerald/Granite Rapids) + Titanium IPU</strong></td></tr>
-         <tr><td><strong>기본 스토리지 엔진</strong></td><td>Persistent Disk (<code>pd-balanced</code> / <code>pd-ssd</code>)</td><td>Persistent Disk 및 일부 Hyperdisk</td><td><strong>차세대 Hyperdisk 전용 설계 (용량·IOPS 완전 분리)</strong></td></tr>
+         <tr><td><strong>CPU 플랫폼 할당</strong></td><td>가용 호스트 풀에서 동적 배정 (CPU 오버서브스크립션 일부 허용)</td><td>고정 프로세서(Ice Lake / Milan) 전용 코어 할당</td><td><strong>전용 최신 코어(Emerald/Granite Rapids, Turin C4D, Axion C4A) + Titanium IPU</strong></td></tr>
+         <tr><td><strong>기본 스토리지 엔진</strong></td><td>Persistent Disk (<code>pd-balanced</code> / <code>pd-ssd</code>)</td><td>Persistent Disk 및 일부 Hyperdisk</td><td><strong>N4/C4/C4A/C4D는 Hyperdisk 전용! (레거시 <code>pd-*</code> 마운트 불가)</strong></td></tr>
          <tr><td><strong>최대 네트워크 대역폭</strong></td><td>최대 16 Gbps</td><td>최대 32 Gbps ~ 100 Gbps (Tier 1)</td><td><strong>최대 100 Gbps ~ 200 Gbps (gVNIC + Tier 1)</strong></td></tr>
          <tr><td><strong>권장 도입 판단 기준</strong></td><td>CPU 스파이크가 적고 비용 절감(약 31% 저렴)이 최우선일 때</td><td>기존 레거시 PD 이미지와의 호환성이 필요할 때</td><td><strong>신규 구축하는 모든 프로덕션 WAS, API, DB 워크로드</strong></td></tr>
        </tbody>
@@ -1075,7 +1075,7 @@ fi</code></pre>
 
       <div class="slide-footer">
         <div class="takeaway-text"><span class="takeaway-label">핵심 요약</span>GPU 클러스터나 Local SSD 기반 데이터베이스 노드를 운영할 때는 반드시 메타데이터 <code>maintenance-event</code> 감지 데몬을 표준 이미지에 포함하십시오.</div>
-        <div class="next-bridge">다음: 1.9 블록 스토리지 아키텍처 개요: 네트워크 기반 분산 볼륨 ▶</div>
+        <div class="next-bridge">다음: 1.9 블록 스토리지 아키텍처 개요: Colossus 기반 분산 볼륨 ▶</div>
       </div>
       <div class="speaker-notes">
         <span class="speaker-notes-title">발표자 노트 (스토리라인 가이드)</span>
@@ -1117,7 +1117,7 @@ fi</code></pre>
        <div class="card card-highlight">
          <div class="card-title">3. Regional 복제 옵션 제공</div>
          <ul class="bullet-list">
-           <li>Regional PD / Regional Hyperdisk Balanced를 선택하면 단일 리전 내 <strong>서로 다른 2개 존(Zone)에 블록을 실시간 동기 복제</strong>합니다.</li>
+           <li><code>hyperdisk-balanced-high-availability</code> 또는 Regional PD를 선택하면 단일 리전 내 <strong>서로 다른 2개 존(Zone)에 블록을 실시간 동기 복제</strong>합니다.</li>
          </ul>
        </div>
      </div>
@@ -1150,7 +1150,7 @@ fi</code></pre>
        <thead><tr><th>비교 항목</th><th>Persistent Disk (<code>pd-balanced</code> / <code>pd-ssd</code>)</th><th>Hyperdisk (<code>hyperdisk-balanced</code> / <code>extreme</code> / <code>throughput</code>)</th></tr></thead>
        <tbody>
          <tr><td><strong>성능 할당 방식</strong></td><td><strong>디스크 용량(GB)에 종속</strong> (GB당 고정 IOPS 및 처리량 부여)</td><td><strong>용량(GB), IOPS, Throughput(MB/s) 3요소 완전 분리 및 독립 프로비저닝!</strong></td></tr>
-         <tr><td><strong>실시간 성능 변경</strong></td><td>성능을 올리려면 용량을 키워야 하며, 한 번 키운 용량은 절대 줄일 수 없음</td><td><strong>용량 변경이나 재부팅 없이 IOPS와 처리량 수치를 실시간 상향·하향 조절 가능!</strong></td></tr>
+         <tr><td><strong>실시간 성능 변경</strong></td><td>성능을 올리려면 용량을 키워야 하며, 한 번 키운 용량은 절대 줄일 수 없음</td><td><strong>용량 변경이나 재부팅 없이 IOPS와 처리량 수치를 실시간 상향·하향 조절 가능! (4시간당 1회 쿨다운)</strong></td></tr>
          <tr><td><strong>최대 성능 한계</strong></td><td><code>pd-ssd</code> 기준 인스턴스당 최대 100,000 IOPS / 1,200 MB/s</td><td><code>hyperdisk-extreme</code> 최대 350,000 IOPS / 5,000 MB/s (C3/C4/N4 지원)</td></tr>
          <tr><td><strong>프로비저닝 통합</strong></td><td>개별 디스크 단위 과금</td><td><strong>Hyperdisk Storage Pools</strong>로 수백 개 디스크가 용량·IOPS 풀을 씬 프로비저닝 공유</td></tr>
        </tbody>
@@ -2672,23 +2672,23 @@ GET /healthz/ready -> if (isShuttingDown || !isWarmedUp)
       </div>
     </section>
 
-    <section class="slide" data-session="s2" data-title="2.20 존 장애 대비: Regional PD/Hyperdisk와 Stateful 아키텍처">
+    <section class="slide" data-session="s2" data-title="2.20 존 장애 대비: Hyperdisk Balanced HA / Regional PD와 Stateful 아키텍처">
       <div class="slide-top">
         <div class="slide-meta-row">
           <span class="slide-badge s2">Session 2 · MIG 라이프사이클 (20 / 24)</span>
           <span class="slide-time">01:25 ~ 01:35 (Stateful MIG & Operations)</span>
         </div>
-        <h2 class="slide-title">2.20 존 장애 대비: Regional PD/Hyperdisk와 Stateful 아키텍처</h2>
+        <h2 class="slide-title">2.20 존 장애 대비: Hyperdisk Balanced HA / Regional PD와 Stateful 아키텍처</h2>
         <div class="storyline-banner">
-          <strong>맥락(Why):</strong> Zonal 디스크는 해당 존이 죽으면 함께 접근이 막힙니다. 2개 존에 실시간 동기 복제되는 Regional Persistent Disk / Regional Hyperdisk Balanced를 활용하는 방법입니다.
+          <strong>맥락(Why):</strong> Zonal 디스크는 해당 존이 죽으면 함께 접근이 막힙니다. 2개 존에 실시간 동기 복제되는 Hyperdisk Balanced High Availability(`hyperdisk-balanced-high-availability`) 또는 Regional PD를 활용하는 방법입니다.
         </div>
       </div>
 
       <div class="slide-body">
 <div class="code-box">
-       <span class="code-title">Regional Hyperdisk Balanced (Zone A ↔ Zone B 실시간 동기 복제) 기반 데이터 보호 구조</span>
-       <pre><code>[정상 시] Zone A의 VM이 [Regional Hyperdisk (Replica: Zone A + Zone B)]를 마운트하여 쓰기 수행 (두 존에 실시간 동기 기록)
-[Zone A 전면 장애 시] ──▶ Regional 디스크의 Zone B 복제본은 100% 최신 상태 유지!
+       <span class="code-title">Hyperdisk Balanced High Availability (Zone A ↔ Zone B 실시간 동기 복제) 기반 데이터 보호 구조</span>
+       <pre><code>[정상 시] Zone A의 VM이 [hyperdisk-balanced-high-availability (Replica: Zone A + Zone B)]를 마운트하여 쓰기 수행 (두 존에 실시간 동기 기록)
+[Zone A 전면 장애 시] ──▶ 듀얼 존 디스크의 Zone B 복제본은 100% 최신 상태 유지!
                      ──▶ Zone B의 대기(Standby) VM 또는 복구 스크립트가 해당 디스크를 강제 부착(force-attach)하여 데이터 유실(RPO=0) 복구!</code></pre>
      </div>
      <div class="grid-2">
@@ -3126,9 +3126,10 @@ GET /healthz/ready -> if (isShuttingDown || !isWarmedUp)
          </ul>
        </div>
        <div class="card card-warn">
-         <div class="card-title">가장 흔한 방화벽 실수!</div>
+         <div class="card-title">가장 흔한 방화벽 및 Deprecated 플래그 실수!</div>
          <ul class="bullet-list">
            <li>백엔드 VM 앞단 방화벽에 클라이언트 서브넷(`10.10.1.0/24`)만 허용하고 <strong>Proxy-only Subnet(`10.129.0.0/23`) 허용을 빼먹으면 100% 연결 타임아웃(502)</strong>이 발생합니다!</li>
+           <li>구형 문서의 <code>--purpose=INTERNAL_HTTPS_LOAD_BALANCER</code>는 <strong>Deprecated</strong>되었으므로 반드시 <strong><code>--purpose=REGIONAL_MANAGED_PROXY</code></strong>를 사용하십시오.</li>
          </ul>
        </div>
      </div>
@@ -3484,7 +3485,7 @@ $ ip route show table local proto 66
          <div class="card-title">2. Target HTTPS Proxy</div>
          <ul class="bullet-list">
            <li>취약한 구형 TLS 1.0/1.1을 막기 위해 반드시 <strong>SSL Policy(<code>MODERN</code> 또는 <code>RESTRICTED</code> 프로파일, 최소 TLS 1.2 이상)</strong>를 연결합니다.</li>
-           <li>모바일 환경 가속을 위해 <code>--quic-override=ENABLE</code>로 HTTP/3(QUIC)를 켤 수 있습니다.</li>
+           <li>엔터프라이즈 인증서 관리는 와일드카드 및 DNS 인가를 지원하는 <strong>Certificate Manager(<code>--certificate-map</code>)</strong>를 권장하며, <code>--quic-override=ENABLE</code>로 HTTP/3(QUIC)를 켤 수 있습니다.</li>
          </ul>
        </div>
        <div class="card card-highlight">
@@ -4247,7 +4248,7 @@ server:
         </div>
         <h2 class="slide-title">4.3 API 응답 지연 시 1분 내 범인 특정: 2가지 Latency 지표 대조</h2>
         <div class="storyline-banner">
-          <strong>맥락(Why):</strong> '결제 API가 느려요! 네트워크나 로드 밸런서 문제 아닌가요?'라는 연락을 받았을 때, LB 로그의 두 시간 필드만 빼기(-) 연산해 보면 1분 안에 책임 구간이 갈립니다.
+          <strong>맥락(Why):</strong> '결제 API가 느려요! 네트워크나 로드 밸런서 문제 아닌가요?'라는 연락을 받았을 때, Cloud Monitoring의 두 지연 메트릭과 Cloud Logging 요청 로그를 대조하면 1분 안에 책임 구간이 갈립니다.
         </div>
       </div>
 
@@ -4255,15 +4256,14 @@ server:
 <div class="code-box">
        <span class="code-title">Cloud Load Balancing이 측정하는 2가지 지연 시간(Latency)의 정확한 경계</span>
        <pre><code>[클라이언트 앱] ◀──── (인터넷/모바일 무선망 RTT 및 대용량 요청·응답 본문 전송 시간) ────▶ [GFE / Envoy 프록시] ◀── (순수 WAS 처리 시간) ──▶ [백엔드 MIG VM]
-               │◀────────────────────── 1. httpRequest.latency (Monitoring: total_latencies) ──────────────────────▶│
-                                                                                │◀─ 2. jsonPayload.backend_target_latency ─▶│
-                                                                                │      (Monitoring: backend_latencies)      │</code></pre>
+               │◀──────────── 1. Monitoring: https/total_latencies (Logging: httpRequest.latency) ────────────▶│
+                                                                               │◀─ 2. Monitoring: https/backend_latencies ─▶│</code></pre>
      </div>
      <table>
-       <thead><tr><th>로그 필드 / 메트릭 명칭</th><th>정확한 측정 시작점 ~ 종료점</th><th>포함되는 시간 요소</th></tr></thead>
+       <thead><tr><th>메트릭 / 로그 필드 명칭</th><th>정확한 측정 시작점 ~ 종료점</th><th>포함되는 시간 요소</th></tr></thead>
        <tbody>
-         <tr><td><strong>1. <code>backend_target_latency</code></strong><br>(<code>https/backend_latencies</code>)</td><td>프록시가 백엔드 VM으로 요청 전송을 시작한 순간부터 ~ <strong>백엔드 VM이 응답의 마지막 바이트를 프록시에 다 넘긴 순간까지</strong></td><td>순수 백엔드 WAS 애플리케이션 로직 실행 시간 + DB 쿼리 시간 + VPC 내부 홉(수 ms 미만)</td></tr>
-         <tr><td><strong>2. <code>httpRequest.latency</code></strong><br>(<code>https/total_latencies</code>)</td><td>클라이언트의 요청 첫 바이트가 프록시에 도착한 순간부터 ~ <strong>클라이언트에게 응답 마지막 바이트 전송이 끝난 순간까지</strong></td><td>위 백엔드 처리 시간 + <strong>클라이언트와 프록시 간의 인터넷 업로드/다운로드 전송 시간 전체!</strong></td></tr>
+         <tr><td><strong>1. <code>https/backend_latencies</code></strong><br>(Internal: <code>https/internal/backend_latencies</code>)</td><td>프록시가 백엔드 VM으로 요청 전송을 시작한 순간부터 ~ <strong>백엔드 VM이 응답의 마지막 바이트를 프록시에 다 넘긴 순간까지</strong></td><td>순수 백엔드 WAS 애플리케이션 로직 실행 시간 + DB 쿼리 시간 + VPC 내부 홉(수 ms 미만)</td></tr>
+         <tr><td><strong>2. <code>https/total_latencies</code></strong><br>(Cloud Logging: <code>httpRequest.latency</code>)</td><td>클라이언트의 요청 첫 바이트가 프록시에 도착한 순간부터 ~ <strong>클라이언트에게 응답 마지막 바이트 전송이 끝난 순간까지</strong></td><td>위 백엔드 처리 시간 + <strong>클라이언트와 프록시 간의 인터넷 업로드/다운로드 전송 시간 전체!</strong></td></tr>
        </tbody>
      </table>
       </div>
@@ -4382,21 +4382,22 @@ server:
 
       <div class="slide-body">
 <div class="code-box">
-       <span class="code-title">쿼리 1 · 백엔드 앱이 자체 리턴한 500을 제외하고, 순수하게 LB/네트워크 구간에서 발생한 5xx 에러만 추출</span>
-       <pre><code>resource.type="http_load_balancer"
+       <span class="code-title">쿼리 1 · 백엔드 앱이 자체 리턴한 500을 제외하고, 순수하게 LB/네트워크 구간에서 발생한 5xx 에러만 추출 (Global/Regional/Internal ALB 통합)</span>
+       <pre><code>resource.type=("http_load_balancer" OR "http_external_regional_lb_rule" OR "internal_http_lb_rule")
 httpRequest.status>=500
 jsonPayload.statusDetails!="response_sent_by_backend"</code></pre>
      </div>
      <div class="code-box">
        <span class="code-title">쿼리 2 · Keep-alive 불일치로 인한 502 에러만 필터링하여 어느 백엔드 그룹에서 나는지 확인</span>
-       <pre><code>resource.type="http_load_balancer"
+       <pre><code>resource.type=("http_load_balancer" OR "http_external_regional_lb_rule" OR "internal_http_lb_rule")
 httpRequest.status=502
 jsonPayload.statusDetails="backend_connection_closed_before_data_sent_to_client"</code></pre>
      </div>
      <div class="code-box">
-       <span class="code-title">쿼리 3 · 순수 백엔드 처리 시간이 3초(3s)를 초과한 슬로우 API 요청만 추출</span>
-       <pre><code>resource.type="http_load_balancer"
-jsonPayload.backend_target_latency>"3s"</code></pre>
+       <span class="code-title">쿼리 3 · 백엔드까지 정상 도달했으나 전체 처리 시간(httpRequest.latency)이 3초(3s)를 초과한 슬로우 API 요청만 추출</span>
+       <pre><code>resource.type=("http_load_balancer" OR "http_external_regional_lb_rule" OR "internal_http_lb_rule")
+jsonPayload.statusDetails="response_sent_by_backend"
+httpRequest.latency>"3s"</code></pre>
      </div>
       </div>
 
